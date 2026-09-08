@@ -117,7 +117,8 @@
   /* ---------- gallery lightbox ---------- */
   var lb = $('.lb');
   if (lb) {
-    var figs = $$('.gal figure');
+    // the masonry gallery and the inline photo strips share one lightbox
+    var figs = $$('.gal figure, .strip figure');
     var lbImg = $('.lb img', lb);
     var lbCount = $('.lb-count', lb);
     var lbCap = $('.lb-cap', lb);
@@ -167,12 +168,13 @@
     var nBtn = $('.lb-next', lb);
     if (nBtn) nBtn.addEventListener('click', function () { show(idx + 1); });
     lb.addEventListener('click', function (e) { if (e.target === lb) close(); });
+    // In RTL, ArrowLeft advances; in LTR it goes back.
+    var rtl = document.documentElement.getAttribute('dir') === 'rtl';
     document.addEventListener('keydown', function (e) {
       if (!lb.classList.contains('on')) return;
       if (e.key === 'Escape') close();
-      // RTL: ArrowLeft advances forward
-      if (e.key === 'ArrowLeft') show(idx + 1);
-      if (e.key === 'ArrowRight') show(idx - 1);
+      if (e.key === 'ArrowLeft') show(rtl ? idx + 1 : idx - 1);
+      if (e.key === 'ArrowRight') show(rtl ? idx - 1 : idx + 1);
     });
 
     // touch swipe
@@ -181,7 +183,10 @@
     lb.addEventListener('touchend', function (e) {
       if (x0 === null) return;
       var dx = e.changedTouches[0].clientX - x0;
-      if (Math.abs(dx) > 48) show(dx < 0 ? idx + 1 : idx - 1);
+      if (Math.abs(dx) > 48) {
+        var fwd = rtl ? dx > 0 : dx < 0;   // swipe against the reading direction advances
+        show(fwd ? idx + 1 : idx - 1);
+      }
       x0 = null;
     }, { passive: true });
   }
