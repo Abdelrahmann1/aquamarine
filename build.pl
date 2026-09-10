@@ -74,19 +74,40 @@ sub ic { my ($k,$cls) = @_; $cls = $cls ? "i $cls" : 'i';
 # ============================================================
 sub nav_html {
   my ($active) = @_;
-  my $o = '<ul class="nav">';
+  # the first <li> is the white "ink" that JS slides under the hovered link
+  my $o = '<ul class="nav"><li class="ink" aria-hidden="true"></li>';
   for my $n (@NAV) {
     my ($href,$label,$sub) = @$n;
     my $on = ($href eq $active) ? ' active' : '';
     if ($sub) {
-      $o .= qq{<li class="has-sub$on"><a href="$href">@{[t($label)]}} . ic('chevd','car') . q{</a><ul class="sub">};
-      $o .= qq{<li><a href="service-$_->{slug}.html">@{[t($_->{t})]}</a></li>} for @SERVICES;
-      $o .= '</ul></li>';
+      $o .= qq{<li class="has-mega$on"><a href="$href" aria-haspopup="true" aria-expanded="false" aria-controls="mega">@{[t($label)]}} . ic('chevd','car') . q{</a></li>};
     } else {
       $o .= qq{<li class="$on"><a href="$href">@{[t($label)]}</a></li>};
     }
   }
   return $o . '</ul>';
+}
+
+# services mega panel: nine numbered links plus a brand card
+sub mega_html {
+  my $o = q{<div class="mega" id="mega"><div class="mega-grid">};
+  my $n = 0;
+  for my $s (@SERVICES) {
+    $o .= qq{<a href="service-$s->{slug}.html"><span class="mn">@{[numeral($n)]}</span>}
+        . qq{<span><span class="mt">@{[t($s->{t})]}</span><span class="md">@{[t($s->{d})]}</span></span></a>};
+    $n++;
+  }
+  my ($h, $p) = ar()
+    ? ('حلول مياه متكاملة منذ 2004', 'من التصميم والحسابات حتى التنفيذ والصيانة الدورية — بفريق واحد.')
+    : ('Complete water systems since 2004', 'From design and engineering to installation and scheduled maintenance — one team.');
+  $o .= q{</div><div class="mega-card">}
+      . q{<svg class="waves" viewBox="0 0 280 120" preserveAspectRatio="none" aria-hidden="true">}
+      . q{<path d="M0 34C60 14 120 54 180 34S258 14 280 26V120H0Z" fill="#1d5fae" opacity=".5"/>}
+      . q{<path d="M0 60C60 40 120 80 180 60S258 40 280 52V120H0Z" fill="#2589cd" opacity=".6"/>}
+      . q{<path d="M0 86C60 66 120 106 180 86S258 66 280 78V120H0Z" fill="#6aaade" opacity=".75"/></svg>}
+      . qq{<span class="since">EST. 2004</span><h4>$h</h4><p>$p</p>}
+      . qq{<a class="cta-pill" href="order.html">@{[t($T{order_now})]}} . ic(fwd(),'ic') . q{</a></div></div>};
+  return $o;
 }
 
 sub lang_html {
@@ -97,24 +118,39 @@ sub lang_html {
        . qq{<a href="$other" hreflang="$altlang" lang="$altlang">$alt</a></div>};
 }
 
+sub social_html {
+  return qq{<div class="soc">}
+    . qq{<a href="$C{fb}" target="_blank" rel="noopener" aria-label="Facebook">} . ic('fb') . q{</a>}
+    . qq{<a href="$C{ig}" target="_blank" rel="noopener" aria-label="Instagram">} . ic('ig') . q{</a>}
+    . qq{<a href="$C{tw}" target="_blank" rel="noopener" aria-label="Twitter">} . ic('tw') . q{</a>}
+    . qq{<a href="$C{yt}" target="_blank" rel="noopener" aria-label="YouTube">} . ic('yt') . q{</a>}
+    . qq{<a href="$C{li}" target="_blank" rel="noopener" aria-label="LinkedIn">} . ic('li') . q{</a>}
+    . q{</div>};
+}
+
+# mobile: a light side sheet with the colour logo, behind a scrim
 sub drawer_html {
   my ($active,$file) = @_;
-  my $o = qq{<div class="drawer" id="drawer"><div class="drawer-top"><img src="${A}assets/img/logo.png" alt="@{[t($C{full})]}"><button class="dclose" aria-label="@{[t($T{close})]}">} . ic('close') . q{</button></div><ul>};
+  my $o = q{<div class="scrim" aria-hidden="true"></div>}
+        . qq{<div class="drawer" id="drawer" aria-label="@{[t($T{menu})]}"><div class="drawer-top">}
+        . qq{<img src="${A}assets/img/logo-aquamarine.png" alt="@{[t($C{full})]}" width="1002" height="227">}
+        . qq{<button class="dclose" aria-label="@{[t($T{close})]}">} . ic('close') . q{</button></div><ul>};
   for my $n (@NAV) {
     my ($href,$label,$sub) = @$n;
     if ($sub) {
-      $o .= qq{<li><div class="drow"><a href="$href" style="flex:1">@{[t($label)]}</a><button class="dtoggle" aria-label="@{[t($T{all_services})]}">} . ic('chevd') . q{</button></div><ul class="sub-m">};
+      $o .= qq{<li><div class="drow"><a href="$href">@{[t($label)]}</a><button class="dtoggle" aria-label="@{[t($T{all_services})]}">} . ic('chevd') . q{</button></div><ul class="sub-m">};
       $o .= qq{<li><a href="service-$_->{slug}.html">@{[t($_->{t})]}</a></li>} for @SERVICES;
       $o .= '</ul></li>';
     } else {
       $o .= qq{<li><a href="$href">@{[t($label)]}</a></li>};
     }
   }
-  $o .= q{</ul><div class="drawer-foot">};
-  $o .= qq{<a class="btn btn-accent" href="order.html">@{[t($T{order_now})]}} . ic(fwd(),'ic') . q{</a>};
-  $o .= qq{<a class="btn btn-ghost" href="tel:$C{mobile}">} . ic('phone','ic') . qq{<span class="tnum">$C{mobile}</span></a>};
-  $o .= qq{<div style="margin-top:6px">@{[lang_html($file)]}</div>};
-  return $o . '</div></div>';
+  $o .= q{</ul><div class="drawer-foot">}
+      . qq{<a class="cta-pill" href="order.html">@{[t($T{order_now})]}} . ic(fwd(),'ic') . q{</a>}
+      . qq{<a class="btn btn-ghost" href="tel:$C{mobile}" style="justify-content:center">} . ic('phone','ic') . qq{<span class="tnum">$C{mobile}</span></a>}
+      . lang_html($file)
+      . '</div></div>';
+  return $o;
 }
 
 sub head_html {
@@ -129,7 +165,7 @@ sub head_html {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>$title</title>
 <meta name="description" content="$desc">
-<meta name="theme-color" content="#0f2229">
+<meta name="theme-color" content="#25306b">
 <meta property="og:type" content="website">
 <meta property="og:title" content="$title">
 <meta property="og:description" content="$desc">
@@ -146,29 +182,17 @@ sub head_html {
 HTML
 }
 
-sub topbar_html {
-  my $soc = qq{<div class="soc">}
-    . qq{<a href="$C{fb}" target="_blank" rel="noopener" aria-label="Facebook">} . ic('fb') . q{</a>}
-    . qq{<a href="$C{ig}" target="_blank" rel="noopener" aria-label="Instagram">} . ic('ig') . q{</a>}
-    . qq{<a href="$C{tw}" target="_blank" rel="noopener" aria-label="Twitter">} . ic('tw') . q{</a>}
-    . qq{<a href="$C{yt}" target="_blank" rel="noopener" aria-label="YouTube">} . ic('yt') . q{</a>}
-    . qq{<a href="$C{li}" target="_blank" rel="noopener" aria-label="LinkedIn">} . ic('li') . q{</a>}
-    . q{</div>};
-  return qq{<div class="topline"><div class="wrap"><div class="tl-l">}
-    . qq{<span>} . ic('mail') . qq{<a href="mailto:$C{email}">$C{email}</a></span>}
-    . qq{<span>} . ic('pin') . qq{@{[t($C{addr})]}</span>}
-    . qq{<span>} . ic('clock') . qq{@{[t($T{support_24})]}</span>}
-    . qq{</div><div class="tl-r"><span class="tnum"><a href="tel:$C{intl}">+$C{intl}</a></span>$soc</div></div></div>};
-}
-
+# the floating capsule: logo · nav (with sliding ink + mega panel) · actions
 sub header_html {
   my ($active,$file) = @_;
-  return topbar_html()
-    . qq{<header class="hdr"><div class="wrap">}
-    . qq{<a class="brand" href="index.html"><img src="${A}assets/img/logo.png" alt="@{[t($C{full})]}" width="353" height="108"></a>}
+  return qq{<header class="hdr"><div class="wrap"><div class="cap">}
+    . qq{<a class="brand" href="index.html"><img src="${A}assets/img/logo-aquamarine.png" alt="@{[t($C{full})]}" width="1002" height="227"></a>}
     . nav_html($active)
-    . qq{<div class="hdr-cta">@{[lang_html($file)]}<a class="btn btn-accent" href="order.html">@{[t($T{order_now})]}} . ic(fwd(),'ic') . q{</a>}
+    . q{<div class="acts">} . lang_html($file)
+    . qq{<a class="icon-btn" href="tel:$C{mobile}" aria-label="@{[t($T{call_us})]}">} . ic('phone') . q{</a>}
+    . qq{<a class="cta-pill" href="order.html">@{[t($T{order_now})]}} . ic(fwd(),'ic') . q{</a>}
     . qq{<button class="burger" aria-label="@{[t($T{menu})]}" aria-expanded="false" aria-controls="drawer"><span></span><span></span><span></span></button>}
+    . q{</div>} . mega_html()
     . q{</div></div></header>}
     . drawer_html($active,$file);
 }
@@ -185,7 +209,7 @@ sub footer_html {
   <div class="wrap">
     <div class="f-grid">
       <div>
-        <img class="flogo" src="${A}assets/img/logo.png" alt="@{[t($C{full})]}">
+        <img class="flogo" src="${A}assets/img/logo-aquamarine-plate.jpg" alt="@{[t($C{full})]}" width="1002" height="227">
         <p style="font-size:.94rem;line-height:1.9;max-width:44ch">@{[t($T{footer_blurb})]}</p>
         <div class="f-contact" style="margin-top:1.5em">
           <div>@{[ic('pin')]}<span>@{[t($C{addr})]}</span></div>
@@ -212,7 +236,7 @@ sub footer_html {
     </div>
   </div>
   <div class="f-bottom"><div class="wrap">
-    <span>© <span class="yr">2025</span> @{[t($T{all_rights})]} — @{[t($C{full})]}</span>
+    <span>© <span class="yr">2025</span> @{[t($T{all_rights})]} — @{[t($C{full})]}</span>@{[social_html()]}
     <a href="${A}assets/doc/AQUAMARINE_CV.pdf" target="_blank" rel="noopener" style="display:inline-flex;gap:.5em;align-items:center">@{[ic('file')]} @{[t($T{profile})]}</a>
   </div></div>
 </footer>
@@ -423,36 +447,159 @@ sub locations_block {
   return $o . '</ul>';
 }
 
+# ------------------------------------------------------------
+#  Gallery albums + media helpers
+# ------------------------------------------------------------
+our (@ALBUMS, @VIDEOS);
+
+# Pixel size of a JPEG, read from its SOF marker, so gallery images can
+# carry width/height and the masonry doesn't jump while photos load.
+my %DIMS;
+sub jpeg_dims {
+  my ($path) = @_;
+  return @{ $DIMS{$path} } if $DIMS{$path};
+  open(my $fh, '<:raw', $path) or return;
+  my $buf;
+  read($fh, $buf, 2);
+  return unless $buf eq "\xFF\xD8";
+  while (read($fh, $buf, 4) == 4) {
+    my ($ff, $mk, $len) = unpack('CCn', $buf);
+    return unless $ff == 0xFF;
+    if ($mk >= 0xC0 && $mk <= 0xCF && $mk != 0xC4 && $mk != 0xC8 && $mk != 0xCC) {
+      read($fh, $buf, 5);
+      my (undef, $h, $w) = unpack('Cnn', $buf);
+      $DIMS{$path} = [$w, $h];
+      return ($w, $h);
+    }
+    seek($fh, $len - 2, 1);
+  }
+  return;
+}
+
+# Display size of the first video track in an MP4 (its tkhd box),
+# honouring a 90/270-degree rotation matrix the way browsers do.
+sub mp4_dims {
+  my ($path) = @_;
+  open(my $fh, '<:raw', $path) or return;
+  local $/;
+  my $d = <$fh>;
+  close $fh;
+  while ($d =~ /tkhd/g) {
+    my $p   = pos $d;
+    my $off = ord(substr($d, $p, 1)) == 1 ? 88 : 76;   # v1 boxes carry 64-bit times
+    my ($w, $h) = map { $_ >> 16 } unpack('NN', substr($d, $p + $off, 8));
+    next unless $w && $h;                              # audio tracks are 0x0
+    my ($ma, $mb) = unpack('NN', substr($d, $p + $off - 36, 8));
+    ($w, $h) = ($h, $w) if $ma == 0 && $mb != 0;
+    return ($w, $h);
+  }
+  return;
+}
+
+# every gallery photo in album order: { file, cat, cap }
+sub album_items {
+  my @out;
+  for my $al (@ALBUMS) {
+    my @files = $al->{files}
+      ? @{ $al->{files} }
+      : map { s{^assets/img/}{}r } sort { $a cmp $b } glob("assets/img/$al->{glob}");
+    push @out, { file => $_, cat => $al->{slug}, cap => t($al->{t}) } for @files;
+  }
+  return @out;
+}
+
+# a varied preview: photos taken round-robin across the albums
+sub preview_items {
+  my ($want) = @_;
+  my @all = album_items();
+  my @q = map { my $s = $_->{slug}; [ grep { $_->{cat} eq $s } @all ] } @ALBUMS;
+  my @out;
+  while (@out < $want && grep { @$_ } @q) {
+    for my $list (@q) { push @out, shift @$list if @$list && @out < $want; }
+  }
+  return @out;
+}
+
+# The masonry gallery. Takes a list of items, a number (a mixed preview
+# of that many photos), or nothing (every photo in every album).
 sub gal_html {
-  my ($limit) = @_;
-  my @g = $limit ? @GALLERY[0..$limit-1] : @GALLERY;
+  my @items = !@_                   ? album_items()
+            : ref($_[0]) eq 'HASH'  ? @_
+            :                         preview_items($_[0]);
   my $o = '<div class="gal">';
   my $n = 0;
-  my $cap = t($C{name});
-  for my $g (@g) {
+  for my $it (@items) {
+    my $src = "assets/img/$it->{file}";
+    my ($w, $h) = jpeg_dims($src);
+    my $wh = $w ? qq{ width="$w" height="$h"} : '';
     my $d = sprintf('%.2f', ($n % 4) * 0.07);
-    $o .= qq{<figure data-full="${A}assets/img/$g" data-cap="$cap" data-rv data-delay="$d" aria-label="@{[t($T{zoom})]}">}
-       . qq{<img src="${A}assets/img/$g" alt="$cap" loading="lazy">}
-       . qq{<figcaption>} . ic('zoom') . ' ' . t($T{zoom}) . q{</figcaption></figure>};
+    $o .= qq{<figure data-cat="$it->{cat}" data-full="${A}$src" data-cap="$it->{cap}" data-rv data-delay="$d" aria-label="@{[t($T{zoom})]}">}
+       . qq{<img src="${A}$src" alt="$it->{cap}"$wh loading="lazy" decoding="async">}
+       . qq{<figcaption>} . ic('zoom') . qq{ $it->{cap}</figcaption></figure>};
     $n++;
   }
   return $o . '</div>' . lb_html();
 }
 
+# "N things" with Arabic number agreement: 1, 2, 3-10 (plural), 11+ (singular)
+sub count_n {
+  my ($n, $ar, $en) = @_;   # $ar = [one, two, few, many], $en = [one, many]
+  return $n == 1 ? "1 $en->[0]" : "$n $en->[1]" unless ar();
+  my $m = $n % 100;
+  return $n == 1               ? $ar->[0]
+       : $n == 2               ? $ar->[1]
+       : ($m >= 3 && $m <= 10) ? "$n $ar->[2]"
+       :                         "$n $ar->[3]";
+}
+sub photos_n { return count_n($_[0], ['صورة واحدة','صورتان','صور','صورة'], ['photo','photos']); }
+sub albums_n { return count_n($_[0], ['ألبوم واحد','ألبومان','ألبومات','ألبوماً'], ['album','albums']); }
+
+# album shelf — cover cards that double as the gallery filter
+sub album_shelf {
+  my @all = album_items();
+  my $total = scalar @all;
+  my $o = qq{<div class="albums" role="group" aria-label="@{[t($T{albums_h})]}">}
+        . qq{<button type="button" class="album album-all on" data-filter="all" aria-pressed="true">}
+        . qq{<span class="cv"><b class="tnum">$total</b></span>}
+        . qq{<span class="nm">@{[t($T{all_photos})]}</span><span class="ct">@{[photos_n($total)]}</span></button>};
+  for my $al (@ALBUMS) {
+    my @mine = grep { $_->{cat} eq $al->{slug} } @all;
+    next unless @mine;
+    my $cover = $al->{cover} || $mine[0]{file};
+    my $cnt = scalar @mine;
+    $o .= qq{<button type="button" class="album" data-filter="$al->{slug}" aria-pressed="false">}
+        . qq{<span class="cv"><img src="${A}assets/img/$cover" alt="" loading="lazy" decoding="async"></span>}
+        . qq{<span class="nm">@{[t($al->{t})]}</span><span class="ct">@{[photos_n($cnt)]}</span></button>};
+  }
+  return $o . '</div>';
+}
+
 sub lb_html {
   my ($p,$n) = ar() ? ('chevr','chevl') : ('chevl','chevr');
   return qq{<div class="lb" aria-hidden="true" role="dialog" aria-label="@{[t($T{gallery_h})]}">}
-    . qq{<div class="lb-bar"><span class="lb-count tnum">1 / 1</span><button class="lb-btn lb-close" aria-label="@{[t($T{close})]}">} . ic('close') . q{</button></div>}
+    . qq{<div class="lb-bar"><span class="lb-count tnum">1 / 1</span><span class="lb-cap"></span><button class="lb-btn lb-close" aria-label="@{[t($T{close})]}">} . ic('close') . q{</button></div>}
     . qq{<button class="lb-btn lb-nav lb-prev" aria-label="@{[t($T{prev})]}">} . ic($p) . q{</button>}
     . q{<img src="" alt="">}
     . qq{<button class="lb-btn lb-nav lb-next" aria-label="@{[t($T{next})]}">} . ic($n) . q{</button>}
     . q{</div>};
 }
 
+# One video frame: YouTube (click-to-load) or a self-hosted MP4.
+# With no argument it renders the first entry in @VIDEOS.
 sub video_html {
-  return qq{<div class="vid" data-yt="$C{ytid}" data-title="@{[t($C{name})]}" data-rv="s">}
-    . qq{<button class="vid-poster" aria-label="@{[t($T{play})]}"><img src="${A}assets/img/a-3.jpg" alt="@{[t($C{name})]}">}
-    . qq{<span class="play">} . ic('play') . q{</span></button></div>};
+  my ($v) = @_;
+  $v ||= $VIDEOS[0];
+  my $title = t($v->{t});
+  if ($v->{yt}) {
+    return qq{<div class="vid" data-yt="$v->{yt}" data-title="$title" data-rv="s">}
+      . qq{<button class="vid-poster" aria-label="@{[t($T{play})]}"><img src="${A}assets/img/$v->{poster}" alt="$title">}
+      . qq{<span class="play">} . ic('play') . q{</span></button></div>};
+  }
+  my ($w, $h) = mp4_dims("assets/video/$v->{src}");
+  my $ar = $w ? qq{ style="aspect-ratio:$w/$h"} : '';
+  return qq{<div class="vid vid-file"$ar data-rv="s">}
+    . qq{<video controls playsinline preload="metadata" poster="${A}assets/img/$v->{poster}" aria-label="$title">}
+    . qq{<source src="${A}assets/video/$v->{src}" type="video/mp4"></video></div>};
 }
 
 sub captcha {
@@ -959,29 +1106,37 @@ HTML
 
   # ---------------------------------------------------------- GALLERY
   {
-  my $body = phero(t($T{gallery_h}), t($T{gallery_lead}), 'aquamarine20.jpg', [[t($T{gallery_h})]],
-                   [scalar(@GALLERY) . ' ' . (ar() ? 'صورة' : 'photos')])
+  my @all = album_items();
+  my $albums = grep { my $s = $_->{slug}; grep { $_->{cat} eq $s } @all } @ALBUMS;
+  my $body = phero(t($T{gallery_h}), t($T{albums_lead}), 'albatros/makadi-01.jpg', [[t($T{gallery_h})]],
+                   [photos_n(scalar @all), albums_n($albums)])
   . qq{<section class="section"><div class="wrap">}
-  . qq{<p class="lead" style="margin-bottom:clamp(26px,3vw,40px)" data-rv>@{[t($T{gallery_note})]}</p>}
-  . gal_html() . q{</div></section>}
+  . qq{<div class="sec-head" style="margin-bottom:clamp(22px,2.6vw,32px)"><div class="t" data-rv>}
+  . qq{<span class="eyebrow">/ ALBUMS</span><h2 class="h2" style="margin-top:1rem">@{[t($T{albums_h})]}</h2>}
+  . qq{<p class="lead" style="margin-top:.7rem">@{[t($T{gallery_note})]}</p></div></div>}
+  . album_shelf() . gal_html() . q{</div></section>}
   . cta_band();
   page('gallery.html', t($T{gallery_h}) . " — $co", t($T{meta_gallery}), 'gallery.html', $body); $n++;
   }
 
   # ---------------------------------------------------------- VIDEOS
   {
+  my $cards = '';
+  for my $v (@VIDEOS) {
+    # portrait phone clips get a narrow column instead of towering over the film
+    my ($w, $h) = $v->{src} ? mp4_dims("assets/video/$v->{src}") : ();
+    my $cls = ($w && $h && $h > $w) ? 'vcard portrait' : 'vcard';
+    my $link = $v->{link}
+      ? qq{<a class="btn btn-ghost" href="$v->{link}" target="_blank" rel="noopener">@{[ic('yt','ic')]} @{[t($T{watch_yt})]}</a>}
+      : '';
+    $cards .= qq{<figure class="$cls">} . video_html($v)
+            . qq{<figcaption data-rv><div><h3>@{[t($v->{t})]}</h3><p>@{[t($v->{d})]}</p></div>$link</figcaption></figure>};
+  }
   my $body = phero(t($T{video_page_h}), t($T{video_page_lead}), 'a-3.jpg', [[t($T{video_page_h})]])
   . <<"HTML";
 <section class="section">
-  <div class="wrap-n">
-    @{[video_html()]}
-    <div style="margin-top:2rem;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap" data-rv>
-      <div>
-        <h2 class="h3">@{[t($C{name})]}</h2>
-        <p class="muted" style="font-size:.92rem;margin-top:.3em">@{[t($T{video_sub})]}</p>
-      </div>
-      <a class="btn btn-ghost" href="$C{yt}" target="_blank" rel="noopener">@{[ic('yt','ic')]} @{[t($T{watch_yt})]}</a>
-    </div>
+  <div class="wrap">
+    <div class="vids">$cards</div>
   </div>
 </section>
 

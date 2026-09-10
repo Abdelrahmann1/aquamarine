@@ -517,7 +517,7 @@
 .lb-btn{
   width:46px;height:46px;border-radius:50%;display:grid;place-items:center;
   border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#fff;
-  cursor:pointer;transition:all .32s var(--ease);
+  cursor:pointer;transition:background .32s var(--ease),border-color .32s var(--ease),color .32s var(--ease);
 }
 .lb-btn:hover{background:var(--aqua);border-color:var(--aqua);color:#fff}
 .lb-btn svg{width:19px;height:19px}
@@ -723,3 +723,51 @@
   .hero-bar li{padding-inline:14px}
   .hero-bar b{font-size:1.5rem}
 }
+
+/* ============================================================
+   GALLERY ALBUMS — cover cards that double as the filter
+   ============================================================ */
+.albums{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:clamp(10px,1.2vw,16px);margin-bottom:clamp(28px,3.4vw,46px)}
+.album{
+  display:flex;flex-direction:column;padding:0;margin:0;text-align:start;cursor:pointer;
+  background:var(--card);border:1px solid var(--line);border-radius:var(--rad);overflow:hidden;
+  transition:transform .4s var(--ease-out),box-shadow .4s var(--ease),border-color .3s var(--ease);
+}
+.album:hover{transform:translateY(-4px);box-shadow:var(--shadow-l);border-color:transparent}
+.album .cv{display:block;aspect-ratio:4/3;overflow:hidden;background:var(--dark);position:relative}
+.album .cv img{width:100%;height:100%;object-fit:cover;transition:transform .8s var(--ease-out)}
+.album:hover .cv img{transform:scale(1.07)}
+.album .nm{display:block;padding:.72em .85em .1em;font-size:.86rem;font-weight:600;line-height:1.4;color:var(--ink)}
+.album .ct{display:block;padding:0 .85em .8em;font-family:var(--f-mono);font-size:.7rem;color:var(--ink-3)}
+.album.on{border-color:var(--aqua);box-shadow:0 0 0 2px var(--aqua),var(--shadow-m)}
+.album.on .nm{color:var(--aqua-d)}
+.album-all .cv{display:grid;place-items:center;background:linear-gradient(140deg,var(--dark-3),var(--dark))}
+.album-all .cv b{font-size:clamp(1.6rem,2.6vw,2.2rem);font-weight:600;color:var(--aqua-l);letter-spacing:-.02em}
+.gal figure[hidden],.strip figure[hidden]{display:none}
+.lb-cap{flex:1;margin-inline:16px;font-size:.88rem;color:#fff;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ============================================================
+   VIDEO GRID
+   ============================================================ */
+.vids{display:flex;flex-wrap:wrap;gap:clamp(22px,2.8vw,40px);align-items:flex-start}
+.vcard{margin:0;flex:1 1 440px;min-width:0}.vcard.portrait{flex:0 1 330px}
+.vcard figcaption{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:1.2rem}
+.vcard h3{font-size:1.1rem}
+.vcard p{font-size:.9rem;color:var(--ink-3);margin:.2em 0 0}
+/* the frame takes the clip's own aspect ratio (set inline by build.pl), so `cover` never crops the video, only a differently shaped poster */
+.vid-file video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;border:0}
+
+@media (max-width:880px){.vcard,.vcard.portrait{flex:1 1 100%}.vcard.portrait{max-width:340px;margin-inline:auto}}
+@media (max-width:640px){
+  .albums{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:42%;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:6px}
+  .album{scroll-snap-align:start}
+}
+
+/* ============================================================
+   FIXED HEADER CLEARANCE — the capsule floats over the first section
+   ============================================================ */
+html{scroll-padding-top:140px}
+.hero > .wrap{padding-top:calc(var(--hdr-space) + clamp(40px,7vh,90px))}
+.phero{padding-top:calc(var(--hdr-space) + clamp(34px,5vw,74px))}
+.subnav{top:78px}
+@media (max-width:640px){.hero > .wrap{padding-top:calc(var(--hdr-space) + 36px)}}

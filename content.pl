@@ -586,4 +586,35 @@ $T{jump_projects}  = ['مشروعات','Projects'];
 $T{jump_scope}     = ['نطاق الأعمال','Scope'];
 $T{jump_contact}   = ['تواصل','Contact'];
 
+# ------------------------------------------------------------
+#  Photo albums — the gallery page filters by these.
+#  `glob` albums pick up every matching file at build time, so new
+#  photos only need dropping into assets/img/albatros/ and a rebuild.
+#  Optional: cover=>'albatros/makadi-05.jpg' to choose the album cover.
+# ------------------------------------------------------------
+our @ALBUMS = (
+  { slug=>'makadi',    glob=>'albatros/makadi-*.jpg',    t=>['ألباتروس مكادي','Albatros Makadi'] },
+  { slug=>'portofino', glob=>'albatros/portofino-*.jpg', t=>['ألباتروس بورتوفينو','Albatros Portofino'] },
+  { slug=>'citadel',   glob=>'albatros/citadel-*.jpg',   t=>['ألباتروس سيتادل','Albatros Citadel'] },
+  { slug=>'resort',    glob=>'albatros/resort-*.jpg',    t=>['ألباتروس ريزورت','Albatros Resort'] },
+  { slug=>'neverland', glob=>'albatros/neverland-*.jpg', t=>['ألباتروس نيفرلاند','Albatros Neverland'] },
+  { slug=>'archive',   files=>[@GALLERY],                t=>['أرشيف أكوا مارين','Aqua Marine archive'] },
+);
+
+# ------------------------------------------------------------
+#  Videos — `yt` for YouTube, `src` for a file in assets/video/
+# ------------------------------------------------------------
+our @VIDEOS = (
+  { yt=>$C{ytid}, poster=>'a-3.jpg', link=>$C{yt}, t=>$C{name}, d=>$T{video_sub} },
+  { src=>'albatros-resort.mp4', poster=>'albatros/resort-01.jpg',
+    t=>['ألباتروس ريزورت','Albatros Resort'], d=>['لقطة من موقع المشروع','A clip from the project site'] },
+);
+
+$T{albums_h}    = ['ألبومات المشروعات','Project albums'];
+$T{albums_lead} = ['صور من مشروعات منتجعات ألباتروس، إلى جانب أرشيف أعمال الشركة. اختر ألبوماً لعرض صوره فقط.',
+                   'Photography from the Albatros resort projects, alongside the company archive. Pick an album to show only its photos.'];
+$T{photos_word} = ['صورة','photos'];
+$T{albums_word} = ['ألبومات','albums'];
+$T{videos_word} = ['فيديو','videos'];
+
 1;

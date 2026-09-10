@@ -8,6 +8,7 @@
   var $  = function (s, c) { return (c || document).querySelector(s); };
   var $$ = function (s, c) { return Array.prototype.slice.call((c || document).querySelectorAll(s)); };
   var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var english = document.documentElement.lang === 'en';
 
   /* ---------- header: stuck state + scroll progress ---------- */
   var hdr = $('.hdr');
@@ -32,13 +33,70 @@
     });
   }
 
-  /* ---------- mobile drawer ---------- */
+  /* ---------- nav: sliding ink + services mega panel ---------- */
+  var nav = $('.nav');
+  var ink = nav && $('.ink', nav);
+  var cap = $('.cap');
+  if (nav && ink) {
+    var activeA = $('.nav > li.active > a');
+    var placeInk = function (a, instant) {
+      if (!a) { ink.classList.remove('on'); return; }
+      var r = a.getBoundingClientRect(), n = nav.getBoundingClientRect();
+      if (instant) ink.style.transition = 'none';
+      ink.style.left = (r.left - n.left) + 'px';
+      ink.style.width = r.width + 'px';
+      ink.classList.add('on');
+      if (instant) { void ink.offsetWidth; ink.style.transition = ''; }
+    };
+    var rest = function () {
+      placeInk(cap && cap.classList.contains('mega-open') ? $('.nav > li.has-mega > a') : activeA);
+    };
+    $$('.nav > li:not(.ink) > a').forEach(function (a) {
+      a.addEventListener('mouseenter', function () { placeInk(a); });
+      a.addEventListener('focus', function () { placeInk(a); });
+    });
+    nav.addEventListener('mouseleave', rest);
+    placeInk(activeA, true);
+    window.addEventListener('resize', function () { placeInk(activeA, true); });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { placeInk(activeA, true); });
+
+    var megaLi = $('.nav > li.has-mega');
+    var mega = $('.mega');
+    if (cap && megaLi && mega) {
+      var megaA = $('a', megaLi), timer = null;
+      var setMega = function (open) {
+        clearTimeout(timer);
+        cap.classList.toggle('mega-open', open);
+        megaLi.classList.toggle('open', open);
+        megaA.setAttribute('aria-expanded', open ? 'true' : 'false');
+        if (!open) rest();
+      };
+      // hover intent: small delays so crossing the gap doesn't flicker it shut
+      var later = function (open) { clearTimeout(timer); timer = setTimeout(function () { setMega(open); }, open ? 60 : 180); };
+      megaLi.addEventListener('mouseenter', function () { later(true); });
+      megaLi.addEventListener('mouseleave', function () { later(false); });
+      mega.addEventListener('mouseenter', function () { clearTimeout(timer); });
+      mega.addEventListener('mouseleave', function () { later(false); });
+      megaLi.addEventListener('focusin', function () { setMega(true); });
+      cap.addEventListener('focusout', function (e) { if (!cap.contains(e.relatedTarget)) setMega(false); });
+      // touch screens: the first tap opens the panel, a second tap follows the link
+      megaA.addEventListener('click', function (e) {
+        if (window.matchMedia('(hover: none)').matches && !cap.classList.contains('mega-open')) { e.preventDefault(); setMega(true); }
+      });
+      document.addEventListener('click', function (e) { if (!cap.contains(e.target)) setMega(false); });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setMega(false); });
+    }
+  }
+
+  /* ---------- mobile drawer (side sheet + scrim) ---------- */
   var burger = $('.burger');
   var drawer = $('.drawer');
+  var scrim = $('.scrim');
 
   function setDrawer(open) {
     if (!drawer) return;
     drawer.classList.toggle('on', open);
+    if (scrim) scrim.classList.toggle('on', open);
     if (burger) {
       burger.classList.toggle('on', open);
       burger.setAttribute('aria-expanded', open ? 'true' : 'false');
@@ -47,13 +105,17 @@
     if (open) {
       // stagger the top-level links
       $$('.drawer > ul > li > a, .drawer > ul > li > .drow', drawer).forEach(function (a, i) {
-        a.style.animationDelay = (0.12 + i * 0.055) + 's';
+        a.style.animationDelay = (0.08 + i * 0.045) + 's';
       });
     }
   }
   if (burger) burger.addEventListener('click', function () { setDrawer(!drawer.classList.contains('on')); });
   var dclose = $('.dclose');
   if (dclose) dclose.addEventListener('click', function () { setDrawer(false); });
+  if (scrim) scrim.addEventListener('click', function () { setDrawer(false); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && drawer && drawer.classList.contains('on')) setDrawer(false);
+  });
   $$('.drawer a[href]').forEach(function (a) {
     a.addEventListener('click', function () { setDrawer(false); });
   });
@@ -117,31 +179,43 @@
   /* ---------- gallery lightbox ---------- */
   var lb = $('.lb');
   if (lb) {
+    // The markup sits inside a section's .wrap, whose z-index makes a
+    // stacking context: left there, the sticky header paints over the
+    // lightbox's top bar and hides its close button. Lift it to <body>.
+    if (lb.parentNode !== document.body) document.body.appendChild(lb);
+
     // the masonry gallery and the inline photo strips share one lightbox
     var figs = $$('.gal figure, .strip figure');
+    var list = figs;           // what the arrows walk through: the visible photos
     var lbImg = $('.lb img', lb);
     var lbCount = $('.lb-count', lb);
     var lbCap = $('.lb-cap', lb);
     var idx = 0;
+    var seq = 0;               // guards against a slow earlier load landing last
 
     function show(i) {
-      if (!figs.length) return;
-      idx = (i + figs.length) % figs.length;
-      var src = figs[idx].getAttribute('data-full') || $('img', figs[idx]).getAttribute('src');
-      var cap = figs[idx].getAttribute('data-cap') || '';
+      if (!list.length) return;
+      idx = (i + list.length) % list.length;
+      var f = list[idx];
+      var src = f.getAttribute('data-full') || $('img', f).getAttribute('src');
+      var cap = f.getAttribute('data-cap') || '';
+      var mine = ++seq;
       lbImg.style.opacity = 0;
       var pre = new Image();
       pre.onload = function () {
+        if (mine !== seq) return;
         lbImg.src = src;
         lbImg.alt = cap;
         lbImg.style.opacity = 1;
       };
       pre.src = src;
-      if (lbCount) lbCount.textContent = (idx + 1) + ' / ' + figs.length;
+      if (lbCount) lbCount.textContent = (idx + 1) + ' / ' + list.length;
       if (lbCap) lbCap.textContent = cap;
     }
-    function open(i) {
-      show(i);
+    function open(fig) {
+      // browse only what the current album filter is showing
+      list = figs.filter(function (f) { return !f.hidden; });
+      show(Math.max(0, list.indexOf(fig)));
       lb.classList.add('on');
       lb.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
@@ -152,12 +226,12 @@
       document.body.style.overflow = '';
     }
 
-    figs.forEach(function (f, i) {
+    figs.forEach(function (f) {
       f.setAttribute('tabindex', '0');
       f.setAttribute('role', 'button');
-      f.addEventListener('click', function () { open(i); });
+      f.addEventListener('click', function () { open(f); });
       f.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(i); }
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(f); }
       });
     });
 
@@ -220,24 +294,26 @@
     });
   });
 
-  /* ---------- works ledger filter ---------- */
-  var chips = $$('.chip[data-filter]');
-  if (chips.length) {
-    chips.forEach(function (chip) {
-      chip.addEventListener('click', function () {
-        var f = chip.getAttribute('data-filter');
-        chips.forEach(function (c) { c.classList.toggle('on', c === chip); });
-        $$('.lrow').forEach(function (row) {
-          var cat = row.getAttribute('data-cat') || '';
-          row.hidden = !(f === 'all' || cat === f);
+  /* ---------- filters: works ledger chips + gallery album cards ---------- */
+  var filters = $$('.chip[data-filter], .album[data-filter]');
+  if (filters.length) {
+    filters.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var f = btn.getAttribute('data-filter');
+        filters.forEach(function (b) {
+          var on = b === btn;
+          b.classList.toggle('on', on);
+          b.setAttribute('aria-pressed', on ? 'true' : 'false');
         });
-        // renumber the visible rows
+        $$('[data-cat]').forEach(function (el) {
+          el.hidden = !(f === 'all' || el.getAttribute('data-cat') === f);
+        });
+        // ledger rows carry a running number; renumber the visible ones
         var n = 0;
         $$('.lrow').forEach(function (row) {
           if (row.hidden) return;
-          n++;
           var cell = row.querySelector('.n');
-          if (cell) cell.textContent = String(n).padStart(2, '0');
+          if (cell) cell.textContent = String(++n).padStart(2, '0');
         });
       });
     });
@@ -315,7 +391,7 @@
       var i = $('input', f);
       if (!i || !/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(i.value.trim())) { i.focus(); return; }
       var btn = $('button', f);
-      if (btn) { btn.textContent = 'تم الاشتراك ✓'; btn.disabled = true; }
+      if (btn) { btn.textContent = english ? 'Subscribed ✓' : 'تم الاشتراك ✓'; btn.disabled = true; }
       i.value = '';
     });
   });
