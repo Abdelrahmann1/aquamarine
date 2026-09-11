@@ -31,6 +31,9 @@ our (%C, @SERVICES, @PROJECTS, @WORKS, @GALLERY, @FULLSERVICES,
   yt      => 'https://www.youtube.com/watch?v=SmqweM1r7A0',
   li      => 'https://www.linkedin.com',
   ytid    => 'SmqweM1r7A0',
+  # Microsoft Clarity project ID — clarity.microsoft.com → your project →
+  # Settings → Overview (a short code such as "abc123xyz0"). Empty = no tracking.
+  clarity => '',
   map     => 'https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d215.66515326588038!2d31.279779304389386!3d30.133043084067662!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x3a82f39a060ab2ab!2sHyper%20Ferjany!5e0!3m2!1sen!2seg!4v1653566862459!5m2!1sen!2seg',
 );
 
@@ -329,6 +332,8 @@ push @GALLERY, qw(
                      'A specialist water contractor: pool construction and maintenance, fountains and waterfalls, treatment and desalination plants, and water and firefighting networks of every kind.'],
   to_top         => ['أعلى الصفحة','Back to top'],
   call_us        => ['اتصل بنا','Call us'],
+  follow         => ['تابعنا','Follow us'],
+  mm_h           => ['هل تخطط لمشروع مياه؟','Planning a water project?'],
 
   # hero
   hero_a         => ['نبني الماء','We build water'],
@@ -616,5 +621,41 @@ $T{albums_lead} = ['صور من مشروعات منتجعات ألباتروس،
 $T{photos_word} = ['صورة','photos'];
 $T{albums_word} = ['ألبومات','albums'];
 $T{videos_word} = ['فيديو','videos'];
+
+# ------------------------------------------------------------
+#  Home page
+# ------------------------------------------------------------
+# names taken from the works ledger and the gallery albums
+our @CLIENTS = (
+  ['بورتو السخنة','Porto Sokhna'], ['حياة ريجنسي شرم الشيخ','Hyatt Regency Sharm'],
+  ['سيتي ستارز','City Stars'], ['سيراميكا كليوباترا','Ceramica Cleopatra'],
+  ['النادي الأهلي','Al Ahly Club'], ['نادي الجزيرة الرياضي','Gezira Sporting Club'],
+  ['المدرسة البريطانية الدولية','British International School'], ['قرية بياسيرا','Piacera Resort'],
+  ['شارمينج هيلز','Charming Hills'], ['ألف ليلة وليلة','Alf Leila Wa Leila'],
+  ['فندق نبق','Nabq Hotel'], ['أوشن باي كلوب','Ocean Bay Club'],
+  ['منتجعات ألباتروس','Albatros Resorts'], ['متحف دول حوض النيل','Nile Basin Museum'],
+);
+
+# the statement: {1} {2} {3} become small photo pills at build time
+$T{sx_h}    = ['تسع خدمات، ومسؤولية واحدة','Nine services, one line of responsibility'];
+$T{sx_l}    = ['مرّر على أي خدمة لمعاينتها، أو افتحها لقراءة التفاصيل.','Hover a service to preview it, or open it for the details.'];
+$T{nums_h}  = ['السجل منذ التأسيس','The record since 2004'];
+$T{num_est} = ['سنة التأسيس','year founded'];
+$T{alb_h}   = ['من مشروعات ألباتروس','From the Albatros projects'];
+$T{alb_l}   = ['ألبومات صور من خمسة منتجعات — افتح أي ألبوم لتصفح صوره.','Photo albums from five resorts. Open one to browse its photos.'];
+$T{wt_h}    = ['شاهد، ثم تحدث إلينا','Watch, then talk to us'];
+$T{wt_l}    = ['جولة قصيرة داخل بعض مشروعاتنا. وحين تكون جاهزاً، فريقنا متاح على مدار اليوم.','A short tour through some of our projects. When you are ready, our team is available around the clock.'];
+$T{num_locs} = [q{مدينة ودولة عملنا فيها},q{cities and countries worked in}];
+
+# the intro beside the photo mosaic (three capability rows)
+our @INTRO_CAPS = (
+  { ico=>'pool',  t=>['حمامات السباحة والنوافير','Pools & fountains'],
+    d=>['تصميم وإنشاء وتشطيب وعزل، مع صيانة دورية.','Design, construction, finishing and waterproofing, with scheduled upkeep.'] },
+  { ico=>'drop',  t=>['محطات التنقية والتحلية والمعالجة','Treatment & desalination plants'],
+    d=>['توريد وتركيب وتشغيل، وتصنيع الفلاتر والتنكات.','Supply, installation and commissioning, with filters and tanks made in-house.'] },
+  { ico=>'pipes', t=>['شبكات المياه والحريق','Water & firefighting networks'],
+    d=>['ري وصرف وتغذية وحريق — UPVC · PPR · HDPE.','Irrigation, drainage, supply and firefighting — UPVC · PPR · HDPE.'] },
+);
+$T{intro_h} = ['أكثر من 20 عاماً في أعمال المياه','Over 20 years of water engineering'];
 
 1;

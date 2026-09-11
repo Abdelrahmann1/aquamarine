@@ -711,14 +711,17 @@
   .pager{grid-template-columns:1fr}
   .hero{min-height:auto;display:block}
   .hero > .wrap{padding-block:clamp(60px,10vh,96px) clamp(34px,6vh,54px)}
-  .hero-bar{position:static;background:rgba(8,21,25,.72)}
+  /* back in the flow, but still positioned: the backdrop blur makes the bar a
+     stacking context, and without its z-index the hero scrim paints over it */
+  .hero-bar{position:relative;background:rgba(8,21,25,.72)}
   .badge-yrs{inset-inline-end:auto;inset-inline-start:6px;top:-14px;padding:.82em 1.05em;min-width:100px}
   .badge-yrs b{font-size:1.6rem}
   .split-media .m2{display:none}
   .cta-in{flex-direction:column;align-items:flex-start}
 }
 @media (max-width:420px){
-  .gal{columns:1}
+  .gal{columns:2;column-gap:10px}
+  .gal figure{margin-bottom:10px}
   .strip{grid-template-columns:repeat(2,1fr)}
   .hero-bar li{padding-inline:14px}
   .hero-bar b{font-size:1.5rem}
@@ -771,3 +774,39 @@ html{scroll-padding-top:140px}
 .phero{padding-top:calc(var(--hdr-space) + clamp(34px,5vw,74px))}
 .subnav{top:78px}
 @media (max-width:640px){.hero > .wrap{padding-top:calc(var(--hdr-space) + 36px)}}
+
+/* ============================================================
+   TICKERS IN RTL — the strip hangs off the left edge, so it has to travel
+   right; sliding it left (the LTR direction) empties the band in seconds
+   ============================================================ */
+@keyframes marq-rtl{from{transform:translateX(0)}to{transform:translateX(50%)}}
+[dir="rtl"] .marq-in,[dir="rtl"] .omarq-in{animation-name:marq-rtl}
+
+/* ============================================================
+   ARABIC LABELS — the small labels use the mono face with wide tracking,
+   which suits Latin but pulls joined Arabic letters apart
+   ============================================================ */
+[dir="rtl"] .phero-tags span,
+[dir="rtl"] .fact dt,
+[dir="rtl"] .pager .lbl,
+[dir="rtl"] .album .ct,
+[dir="rtl"] .pill,
+[dir="rtl"] .scroll-cue{font-family:var(--f-ar);letter-spacing:0;text-transform:none}
+[dir="rtl"] .phero-tags span{font-size:.8rem}
+[dir="rtl"] .fact dt{font-size:.8rem;direction:rtl}
+[dir="rtl"] .pager .lbl{font-size:.78rem}
+[dir="rtl"] .album .ct{font-size:.76rem}
+/* Latin tags and phone numbers run LTR, so their start edge is the left: pin them right */
+[dir="rtl"] .proj-in .tag,
+[dir="rtl"] .ccard .tnum{text-align:right}
+
+/* ============================================================
+   PHONES
+   ============================================================ */
+@media (max-width:640px){
+  /* the hero buttons share the row, and take a full line each on a phone */
+  .hero-btns .btn{flex:1 1 220px;justify-content:center}
+  /* feature cards collapse to a number + text row */
+  .feat{display:flex;align-items:baseline;gap:14px;padding:16px 18px}
+  .feat-n{flex:none;margin:0}
+}

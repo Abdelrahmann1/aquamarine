@@ -5,8 +5,12 @@ use warnings;
 use HTTP::Daemon;
 use HTTP::Status;
 
+# A browser that drops a connection mid-response (an aborted image or video
+# fetch) would otherwise kill this process with SIGPIPE.
+$SIG{PIPE} = q{IGNORE};
+
 my $port = $ARGV[0] || 8099;
-my $d = HTTP::Daemon->new(LocalAddr => '127.0.0.1', LocalPort => $port, ReuseAddr => 1)
+my $d = HTTP::Daemon->new(LocalAddr => '127.0.0.1', LocalPort => $port, ReuseAddr => 1, Listen => 128)
   or die "Cannot bind port $port: $!";
 print "Serving " . `pwd` . "at " . $d->url . "\n";
 $| = 1;

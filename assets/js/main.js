@@ -8,7 +8,18 @@
   var $  = function (s, c) { return (c || document).querySelector(s); };
   var $$ = function (s, c) { return Array.prototype.slice.call((c || document).querySelectorAll(s)); };
   var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var english = document.documentElement.lang === 'en';
+  // a Microsoft Clarity custom event; does nothing when Clarity isn't installed
+  var track = function (name) { if (typeof window.clarity === 'function') window.clarity('event', name); };
+  // mark the contact moments: calls, WhatsApp, email and the company profile
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest ? e.target.closest('a[href]') : null;
+    if (!a) return;
+    var h = a.getAttribute('href');
+    if (/^tel:/i.test(h)) track('call_click');
+    else if (/whatsapp\.com|wa\.me/i.test(h)) track('whatsapp_click');
+    else if (/^mailto:/i.test(h)) track('email_click');
+    else if (/\.pdf(?:$|[?#])/i.test(h)) track('profile_download');
+  });
 
   /* ---------- header: stuck state + scroll progress ---------- */
   var hdr = $('.hdr');
@@ -88,52 +99,80 @@
     }
   }
 
-  /* ---------- mobile drawer (side sheet + scrim) ---------- */
+  /* ---------- mobile menu: a panel that drops out of the capsule ---------- */
   var burger = $('.burger');
-  var drawer = $('.drawer');
-  var scrim = $('.scrim');
+  var mm = $('#mmenu');
+  var mmScrim = $('.mm-scrim');
+  var mmTg = mm && $('.mm-tg', mm);
+  var mmSub = mm && $('.mm-sub', mm);
+  var mmTimer = null;
+  var menuOpen = function () { return !!mm && mm.classList.contains('on'); };
 
-  function setDrawer(open) {
-    if (!drawer) return;
-    drawer.classList.toggle('on', open);
-    if (scrim) scrim.classList.toggle('on', open);
-    if (burger) {
-      burger.classList.toggle('on', open);
-      burger.setAttribute('aria-expanded', open ? 'true' : 'false');
-    }
-    document.body.style.overflow = open ? 'hidden' : '';
-    if (open) {
-      // stagger the top-level links
-      $$('.drawer > ul > li > a, .drawer > ul > li > .drow', drawer).forEach(function (a, i) {
-        a.style.animationDelay = (0.08 + i * 0.045) + 's';
-      });
-    }
+  function setSub(open) {
+    if (!mmTg || !mmSub) return;
+    mmSub.classList.toggle('on', open);
+    mmTg.setAttribute('aria-expanded', open ? 'true' : 'false');
   }
-  if (burger) burger.addEventListener('click', function () { setDrawer(!drawer.classList.contains('on')); });
-  var dclose = $('.dclose');
-  if (dclose) dclose.addEventListener('click', function () { setDrawer(false); });
-  if (scrim) scrim.addEventListener('click', function () { setDrawer(false); });
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && drawer && drawer.classList.contains('on')) setDrawer(false);
-  });
-  $$('.drawer a[href]').forEach(function (a) {
-    a.addEventListener('click', function () { setDrawer(false); });
-  });
-  // drawer submenus
-  $$('.dtoggle').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      var sub = btn.closest('li').querySelector('.sub-m');
-      btn.classList.toggle('on');
-      if (sub) sub.classList.toggle('on');
+
+  function setMenu(open) {
+    if (!mm || !burger) return;
+    clearTimeout(mmTimer);
+    if (open) {
+      mm.hidden = false;
+      mm.scrollTop = 0;
+      void mm.offsetWidth;   // commit the closed pose first, so the panel animates in
+      // the rows arrive one after another, then the card and the social row
+      $$('.mm-nav > ul > li, .mm-card, .mm-foot', mm).forEach(function (el, i) {
+        el.style.animationDelay = (0.06 + i * 0.035) + 's';
+      });
+      track('menu_open');
+    } else {
+      mmTimer = setTimeout(function () { mm.hidden = true; setSub(false); }, 450);
+    }
+    mm.classList.toggle('on', open);
+    if (mmScrim) mmScrim.classList.toggle('on', open);
+    burger.classList.toggle('on', open);
+    burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    document.documentElement.classList.toggle('menu-open', open);
+  }
+
+  if (burger && mm) {
+    burger.addEventListener('click', function () {
+      setMenu(!menuOpen());
+      if (menuOpen()) { var first = $('a', mm); if (first) first.focus({ preventScroll: true }); }
     });
-  });
+    if (mmScrim) mmScrim.addEventListener('click', function () { setMenu(false); });
+    $$('a[href]', mm).forEach(function (a) { a.addEventListener('click', function () { setMenu(false); }); });
+    if (mmTg) mmTg.addEventListener('click', function () { setSub(!mmSub.classList.contains('on')); });
+    document.addEventListener('keydown', function (e) {
+      if (!menuOpen()) return;
+      if (e.key === 'Escape') { setMenu(false); burger.focus(); return; }
+      if (e.key !== 'Tab') return;
+      // Tab cycles through the burger and the panel while the menu is open
+      var f = [burger].concat($$('a[href], button', mm).filter(function (el) {
+        return el.offsetParent !== null && getComputedStyle(el).visibility !== 'hidden';
+      }));
+      var i = f.indexOf(document.activeElement);
+      if (i === -1) return;
+      if (e.shiftKey && i === 0) { e.preventDefault(); f[f.length - 1].focus(); }
+      else if (!e.shiftKey && i === f.length - 1) { e.preventDefault(); f[0].focus(); }
+    });
+    // widening past the burger breakpoint brings the desktop nav back: close the panel
+    var wide = window.matchMedia('(min-width: 1181px)');
+    var onWide = function () { if (wide.matches && menuOpen()) setMenu(false); };
+    if (wide.addEventListener) wide.addEventListener('change', onWide);
+    else if (wide.addListener) wide.addListener(onWide);
+  }
 
   /* ---------- reveal on scroll ---------- */
   var rv = $$('[data-rv]');
   if (rv.length) {
-    if (!('IntersectionObserver' in window) || reduced) {
+    if (!('IntersectionObserver' in window) || reduced || !document.documentElement.classList.contains('rv')) {
       rv.forEach(function (el) { el.classList.add('in'); });
     } else {
+      window.rvReady = true;   // tells the <head> failsafe the page is in hand
+      // threshold 0, not a percentage: a block taller than the viewport (the
+      // works ledger on a phone) can never show 12% of itself at once.
       var io = new IntersectionObserver(function (entries) {
         entries.forEach(function (e) {
           if (!e.isIntersecting) return;
@@ -141,8 +180,12 @@
           setTimeout(function () { e.target.classList.add('in'); }, d * 1000);
           io.unobserve(e.target);
         });
-      }, { threshold: 0.12, rootMargin: '0px 0px -60px' });
-      rv.forEach(function (el) { io.observe(el); });
+      }, { threshold: 0, rootMargin: '0px 0px -8% 0px' });
+      rv.forEach(function (el) {
+        // a block taller than most of the screen gains nothing from fading in
+        if (el.getBoundingClientRect().height > window.innerHeight * 0.9) el.classList.add('in');
+        else io.observe(el);
+      });
     }
   }
 
@@ -319,6 +362,41 @@
     });
   }
 
+  /* ---------- home: services index (the list drives a sticky preview) ---------- */
+  var sx = $('.sx');
+  if (sx) {
+    var sxRows = $$('.sx-list li', sx);
+    var sxFigs = $$('.sx-media figure', sx);
+    var setSx = function (i) {
+      sxRows.forEach(function (li, k) { li.classList.toggle('on', k === i); });
+      sxFigs.forEach(function (f, k) {
+        var on = k === i;
+        f.classList.toggle('on', on);
+        var img = $('img', f);
+        // previews other than the first only download when first shown
+        if (on && img && img.getAttribute('data-src')) {
+          img.src = img.getAttribute('data-src');
+          img.removeAttribute('data-src');
+        }
+      });
+    };
+    sxRows.forEach(function (li, i) {
+      var a = $('a', li);
+      a.addEventListener('mouseenter', function () { setSx(i); });
+      a.addEventListener('focus', function () { setSx(i); });
+    });
+  }
+
+  /* ---------- gallery: open an album straight from a link (gallery.html#makadi) ---------- */
+  if (location.hash && $('.albums')) {
+    var wantAlbum = decodeURIComponent(location.hash.slice(1)).replace(/"/g, '');
+    var albumCard = $('.album[data-filter="' + wantAlbum + '"]');
+    if (albumCard) {
+      albumCard.click();
+      $('.albums').scrollIntoView({ block: 'start', behavior: reduced ? 'auto' : 'smooth' });
+    }
+  }
+
   /* ---------- forms: math check + validation ---------- */
   $$('form[data-validate]').forEach(function (form) {
     var a, b;
@@ -353,6 +431,7 @@
       });
 
       if (!ok) { if (first) first.focus(); return; }
+      track(form.getAttribute('data-track') || 'form_sent');
 
       // No backend on this static build — hand the enquiry to WhatsApp,
       // which is how the company already takes orders.
@@ -384,17 +463,6 @@
     });
   });
 
-  /* ---------- newsletter (no backend) ---------- */
-  $$('.nl-form').forEach(function (f) {
-    f.addEventListener('submit', function (e) {
-      e.preventDefault();
-      var i = $('input', f);
-      if (!i || !/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(i.value.trim())) { i.focus(); return; }
-      var btn = $('button', f);
-      if (btn) { btn.textContent = english ? 'Subscribed ✓' : 'تم الاشتراك ✓'; btn.disabled = true; }
-      i.value = '';
-    });
-  });
 
   /* ---------- current year ---------- */
   $$('.yr').forEach(function (el) { el.textContent = new Date().getFullYear(); });

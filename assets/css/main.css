@@ -38,7 +38,9 @@
 
   /* type */
   --f-ar:'IBM Plex Sans Arabic','Segoe UI',Tahoma,Arial,sans-serif;
-  --f-mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Consolas,monospace;
+  /* Plex Mono has no Arabic: the Arabic face comes second so any Arabic that lands
+     in a mono label borrows it, not the system's (Courier New on Windows) */
+  --f-mono:'IBM Plex Mono','IBM Plex Sans Arabic',ui-monospace,SFMono-Regular,Consolas,monospace;
 
   /* rhythm */
   --gut:clamp(20px,4vw,64px);
@@ -185,7 +187,7 @@ p:last-child{margin-bottom:0}
 .btn-ghost{--bg:transparent;--fg:var(--ink);border-color:var(--line-2)}
 .btn-ghost:hover{border-color:transparent}
 .dark .btn-ghost,.hero .btn-ghost,.phero .btn-ghost,
-.cta .btn-ghost,.footer .btn-ghost,.drawer .btn-ghost{--fg:var(--foam);border-color:var(--line-dark)}
+.cta .btn-ghost,.footer .btn-ghost{--fg:var(--foam);border-color:var(--line-dark)}
 
 .btn-lg{padding:1.05em 2em;font-size:.99rem}
 
@@ -337,59 +339,135 @@ p:last-child{margin-bottom:0}
 [dir="rtl"] .cta-pill:hover .ic{transform:translateX(-3px)}
 [dir="ltr"] .cta-pill:hover .ic{transform:translateX(3px)}
 
+/* burger: three bars, the middle one short, folding into an X while the menu is open */
 .burger{
-  display:none;width:44px;height:44px;border:0;border-radius:13px;
-  background:var(--navy);color:#fff;cursor:pointer;padding:0;place-items:center;flex:none;
+  display:none;position:relative;width:44px;height:44px;border:0;border-radius:13px;flex:none;
+  background:var(--navy);color:#fff;cursor:pointer;padding:0;
+  transition:border-radius .45s var(--ease-out),background .3s var(--ease);
 }
-.burger span{display:block;width:18px;height:1.8px;background:currentColor;border-radius:2px;transition:transform .35s var(--ease-out),opacity .25s var(--ease)}
-.burger span + span{margin-top:4.5px}
-.burger.on span:nth-child(1){transform:translateY(6.3px) rotate(45deg)}
-.burger.on span:nth-child(2){opacity:0}
-.burger.on span:nth-child(3){transform:translateY(-6.3px) rotate(-45deg)}
+.burger span{
+  position:absolute;top:21px;inset-inline-start:13px;width:18px;height:2px;border-radius:2px;background:currentColor;
+  transition:transform .45s var(--ease-out),width .35s var(--ease-out),opacity .2s var(--ease);
+}
+.burger span:nth-child(1){transform:translateY(-6px)}
+.burger span:nth-child(2){width:11px}
+.burger span:nth-child(3){transform:translateY(6px)}
+.burger:hover span:nth-child(2){width:18px}
+.burger:focus-visible{outline:2px solid var(--b-bright);outline-offset:3px}
+.burger.on{border-radius:50%}
+.burger.on span:nth-child(1){transform:rotate(45deg)}
+.burger.on span:nth-child(2){width:0;opacity:0}
+.burger.on span:nth-child(3){transform:rotate(-45deg)}
 
 .progress{position:fixed;top:0;inset-inline:0;height:3px;z-index:80;pointer-events:none}
 .progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--navy),var(--b-blue),var(--b-bright),var(--b-sky))}
 
 /* ============================================================
-   MOBILE — a light side sheet with the colour logo
+   MOBILE MENU — a panel that drops out of the capsule under the burger.
+   The capsule stays on top (the burger turns into the close button) and
+   the page dims behind a scrim that sits just under the header.
    ============================================================ */
-.scrim{position:fixed;inset:0;z-index:69;background:rgba(10,16,40,.45);opacity:0;visibility:hidden;transition:opacity .4s var(--ease),visibility 0s linear .4s}
-.scrim.on{opacity:1;visibility:visible;transition-delay:0s}
-.drawer{
-  position:fixed;top:0;bottom:0;inset-inline-end:0;z-index:70;width:min(400px,100%);
-  display:flex;flex-direction:column;padding:18px 22px 26px;overflow-y:auto;
-  background:#fff;color:var(--ink);box-shadow:var(--shadow-xl);
-  transform:translateX(105%);visibility:hidden;
-  transition:transform .5s var(--ease-out),visibility 0s linear .5s;
+.mm-scrim{
+  position:fixed;inset:0;z-index:49;background:rgba(10,16,40,.42);
+  opacity:0;visibility:hidden;transition:opacity .35s var(--ease),visibility 0s linear .35s;
 }
-[dir="rtl"] .drawer{transform:translateX(-105%)}
-.drawer.on{transform:none;visibility:visible;transition-delay:0s}
-.drawer-top{display:flex;align-items:center;justify-content:space-between;padding-bottom:16px;border-bottom:1px solid var(--line)}
-.drawer-top img{height:34px;width:auto}
-.dclose{width:42px;height:42px;border:0;border-radius:12px;background:var(--paper-2);color:var(--navy);cursor:pointer;display:grid;place-items:center}
-.drawer ul{list-style:none;margin:0;padding:0}
-.drawer > ul{margin-top:6px;counter-reset:dn}
-.drawer > ul > li{border-bottom:1px solid var(--line);counter-increment:dn}
-.drawer > ul > li > a,.drawer > ul > li > .drow{display:flex;align-items:center;gap:14px;padding:.88em 0;font-size:1.03rem;font-weight:600;color:var(--ink)}
-.drawer > ul > li > a::before,.drawer > ul > li > .drow::before{
-  content:counter(dn,decimal-leading-zero);font-family:var(--f-mono);font-size:.7rem;font-weight:500;
-  color:var(--b-bright);min-width:1.9em;direction:ltr;unicode-bidi:isolate;
+.mm-scrim.on{opacity:1;visibility:visible;transition-delay:0s}
+html.menu-open{overflow:hidden}
+
+.mm{
+  position:absolute;top:calc(100% + 10px);inset-inline-end:0;z-index:6;width:min(440px,100%);
+  display:flex;flex-direction:column;gap:10px;padding:10px;
+  max-height:calc(100vh - var(--hdr-space) - 18px);max-height:calc(100dvh - var(--hdr-space) - 18px);
+  overflow-y:auto;overscroll-behavior:contain;
+  background:#fff;border:1px solid rgba(37,48,107,.09);border-radius:22px;box-shadow:var(--shadow-xl);
+  opacity:0;transform:translateY(-10px) scale(.98);transform-origin:top right;
+  transition:opacity .28s var(--ease),transform .45s var(--ease-out);
 }
-.drawer.on > ul > li > a,.drawer.on > ul > li > .drow{animation:dIn .5s var(--ease-out) both}
-@keyframes dIn{from{opacity:0;transform:translateY(10px)}}
-.drawer .drow a{flex:1}
-.drawer .sub-m{display:none;padding:0 0 .8em;padding-inline-start:2.9em}
-.drawer .sub-m.on{display:grid;gap:2px}
-.drawer .sub-m a{display:block;padding:.42em 0;font-size:.9rem;font-weight:400;color:var(--ink-2)}
-.drawer .sub-m a:hover{color:var(--b-blue)}
-.dtoggle{background:var(--paper-2);border:0;color:var(--navy);cursor:pointer;padding:0;display:grid;place-items:center;width:34px;height:34px;border-radius:10px;flex:none}
-.dtoggle svg{transition:transform .35s var(--ease)}
-.dtoggle.on svg{transform:rotate(180deg)}
-.drawer-foot{margin-top:auto;padding-top:22px;display:grid;gap:10px}
-.drawer .btn-ghost{--fg:var(--ink);border-color:var(--line-2)}
-.drawer .cta-pill{justify-content:center;height:48px}
-.drawer .lang{justify-content:center;width:100%}
-.drawer .lang span,.drawer .lang a{flex:1;text-align:center}
+[dir="rtl"] .mm{transform-origin:top left}
+.mm[hidden]{display:none}
+.mm.on{opacity:1;transform:none}
+.mm.on .mm-nav > ul > li,.mm.on .mm-card,.mm.on .mm-foot{animation:mmIn .5s var(--ease-out) both}
+@keyframes mmIn{from{opacity:0;transform:translateY(8px)}}
+
+/* pages: numbered rows, the current one tinted */
+.mm-nav ul{list-style:none;margin:0;padding:0}
+.mm-nav > ul > li > a,.mm-row > a{display:flex;align-items:center;gap:14px;padding:11px 14px;border-radius:14px}
+.mm-nav > ul > li > a{transition:background .25s var(--ease)}
+.mm-row{display:flex;align-items:center;gap:6px;border-radius:14px;transition:background .25s var(--ease)}
+.mm-row > a{flex:1;min-width:0}
+.mm-nav > ul > li > a:hover,.mm-row:hover{background:var(--paper-2)}
+.mm-nav .n{
+  flex:none;min-width:1.7em;font-family:var(--f-mono);font-size:.7rem;font-weight:500;color:var(--ink-3);
+  direction:ltr;unicode-bidi:isolate;transition:color .25s var(--ease);
+}
+.mm-nav .t{font-size:1.08rem;font-weight:600;line-height:1.45;color:var(--ink)}
+.mm-nav .go{
+  width:16px;height:16px;margin-inline-start:auto;color:var(--ink-3);opacity:.45;
+  transition:transform .3s var(--ease-out),opacity .25s var(--ease),color .25s var(--ease);
+}
+.mm-nav > ul > li > a:hover .go{opacity:1;color:var(--navy)}
+[dir="rtl"] .mm-nav > ul > li > a:hover .go{transform:translateX(-3px)}
+[dir="ltr"] .mm-nav > ul > li > a:hover .go{transform:translateX(3px)}
+.mm-nav li.on > a,.mm-nav li.on > .mm-row{background:rgba(37,48,107,.06)}
+.mm-nav li.on .n{color:var(--b-bright)}
+.mm-nav li.on .t{color:var(--navy)}
+.mm-nav li.on .go{opacity:1;color:var(--navy)}
+
+/* services: fold open in place under their row */
+.mm-tg{
+  flex:none;width:38px;height:38px;margin-inline-end:5px;border:0;border-radius:11px;cursor:pointer;
+  display:grid;place-items:center;background:rgba(37,48,107,.07);color:var(--navy);
+  transition:background .3s var(--ease),color .3s var(--ease);
+}
+.mm-tg svg{width:16px;height:16px;transition:transform .4s var(--ease-out)}
+.mm-tg[aria-expanded="true"]{background:var(--navy);color:#fff}
+.mm-tg[aria-expanded="true"] svg{transform:rotate(180deg)}
+.mm-sub{display:grid;grid-template-rows:0fr;transition:grid-template-rows .42s var(--ease-out)}
+.mm-sub.on{grid-template-rows:1fr}
+.mm-sub-in{min-height:0;overflow:hidden;visibility:hidden;transition:visibility 0s linear .42s}
+.mm-sub.on .mm-sub-in{visibility:visible;transition-delay:0s}
+/* an indented list hanging off a guide line, so every full service name fits */
+.mm-grid{
+  display:grid;gap:2px;margin:4px 0 8px;margin-inline-start:30px;padding-inline-start:10px;
+  border-inline-start:2px solid var(--line);
+}
+.mm-grid a{display:flex;align-items:baseline;gap:10px;padding:8px 12px;border-radius:11px;transition:background .25s var(--ease)}
+.mm-grid a:hover{background:var(--paper-2)}
+.mm-grid a.on{background:rgba(37,48,107,.06)}
+.mm-grid .mn{
+  flex:none;min-width:1.5em;font-weight:300;font-size:1.05rem;line-height:1;
+  color:transparent;-webkit-text-stroke:1px rgba(37,48,107,.4);
+}
+.mm-grid a.on .mn{color:var(--b-bright);-webkit-text-stroke-color:transparent}
+.mm-grid .st{font-size:.88rem;font-weight:500;line-height:1.55;color:var(--ink-2)}
+.mm-grid a.on .st{color:var(--navy);font-weight:600}
+.mm-grid a.all{justify-self:start;align-items:center;gap:8px;margin-top:6px;padding:9px 16px;background:var(--navy);color:#fff}
+.mm-grid a.all .st{color:#fff;font-weight:600}
+.mm-grid a.all .ic{width:15px;height:15px}
+.mm-grid a.all:hover{background:var(--navy-2)}
+
+/* the brand card (the desktop mega card's look) carrying the three actions */
+.mm-card{flex:none;padding:18px;gap:8px;border-radius:18px}
+.mm-card h4{font-size:1.02rem}
+.mm-card p{font-size:.8rem}
+.mm-acts{display:flex;align-items:center;gap:8px;margin-top:6px}
+.mm-card .cta-pill{flex:1;justify-content:center;margin-top:0}
+.mm-ic{
+  flex:none;width:44px;height:44px;border-radius:13px;display:grid;place-items:center;color:#fff;
+  background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.24);
+  transition:background .3s var(--ease),transform .3s var(--ease);
+}
+.mm-ic:hover{background:rgba(255,255,255,.26);transform:translateY(-2px)}
+.mm-ic svg{width:19px;height:19px}
+
+.mm-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 8px 2px;font-size:.8rem;color:var(--ink-3)}
+.mm-foot .soc a{border-color:var(--line-2);color:var(--ink-3)}
+.mm-foot .soc a:hover{background:var(--navy);border-color:var(--navy);color:#fff}
+
+@media (max-width:640px){
+  .mm,[dir="rtl"] .mm{inset-inline:0;width:auto;border-radius:20px;transform-origin:top center}
+}
+@media (min-width:1181px){.mm,.mm-scrim{display:none!important}}
 
 @media (max-width:1180px){
   .nav,.acts .cta-pill,.acts .icon-btn{display:none}
@@ -422,13 +500,6 @@ p:last-child{margin-bottom:0}
 .f-contact div{display:flex;gap:.8em;align-items:flex-start}
 .f-contact svg{width:15px;height:15px;color:var(--aqua-l);flex:none;margin-top:.4em}
 .f-contact a:hover{color:#fff}
-.newsletter{margin-top:1.5em}
-.nl-form{display:flex;gap:8px;background:rgba(234,243,245,.06);border:1px solid var(--line-dark);border-radius:99px;padding:5px;transition:border-color .3s var(--ease)}
-.nl-form:focus-within{border-color:var(--aqua)}
-.nl-form input{flex:1;min-width:0;background:none;border:0;outline:0;padding:.6em 1em;font-size:.88rem;color:#fff}
-.nl-form input::placeholder{color:#78939a}
-.nl-form button{border:0;cursor:pointer;border-radius:99px;padding:.6em 1.2em;font-size:.85rem;font-weight:500;background:var(--aqua);color:#fff;transition:filter .3s var(--ease),transform .3s var(--ease)}
-.nl-form button:hover{filter:brightness(1.1);transform:translateY(-1px)}
 .f-bottom{border-top:1px solid var(--line-dark)}
 .f-bottom .wrap{padding-block:20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:.82rem}
 
@@ -448,14 +519,18 @@ p:last-child{margin-bottom:0}
 /* ============================================================
    REVEAL
    ============================================================ */
-[data-rv]{opacity:0;transform:translateY(24px);transition:opacity .8s var(--ease-out),transform .8s var(--ease-out)}
-[data-rv="s"]{transform:scale(.97)}
-[data-rv="x"]{transform:translateX(30px)}
+/* Hidden only while main.js is in charge of revealing (an inline <head> script adds
+   .rv to <html>), so a failed or blocked script never blanks the page. :where()
+   keeps these at their old specificity, so card hover lifts still win. */
+[data-rv]{transition:opacity .8s var(--ease-out),transform .8s var(--ease-out)}
+:where(.rv) [data-rv]{opacity:0;transform:translateY(24px)}
+:where(.rv) [data-rv="s"]{transform:scale(.97)}
+:where(.rv) [data-rv="x"]{transform:translateX(30px)}
 [data-rv].in{opacity:1;transform:none}
 
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;scroll-behavior:auto !important}
-  [data-rv]{opacity:1;transform:none}
+  :where(.rv) [data-rv]{opacity:1;transform:none}
 }
 
 /* ============================================================
@@ -491,6 +566,10 @@ p:last-child{margin-bottom:0}
 @media (max-width:720px){
   .topline .tl-l span:not(:first-child){display:none}
   .f-grid{grid-template-columns:1fr}
+  .f-grid > div:nth-child(2) ul{grid-template-columns:1fr 1fr;column-gap:16px}
   .g-2,.g-3,.g-4{grid-template-columns:1fr}
-  .sec-head{align-items:flex-start}
+  /* smaller floating buttons, nearer the corner, so they sit over less text */
+  .fabs{inset-inline-end:12px;bottom:12px;gap:8px}
+  .fab{width:46px;height:46px}
+  .fab svg{width:20px;height:20px}
 }

@@ -88,6 +88,14 @@ sub nav_html {
   return $o . '</ul>';
 }
 
+# the logo's wave bands, laid along the foot of the navy brand cards
+sub card_waves {
+  return q{<svg class="waves" viewBox="0 0 280 120" preserveAspectRatio="none" aria-hidden="true">}
+       . q{<path d="M0 34C60 14 120 54 180 34S258 14 280 26V120H0Z" fill="#1d5fae" opacity=".5"/>}
+       . q{<path d="M0 60C60 40 120 80 180 60S258 40 280 52V120H0Z" fill="#2589cd" opacity=".6"/>}
+       . q{<path d="M0 86C60 66 120 106 180 86S258 66 280 78V120H0Z" fill="#6aaade" opacity=".75"/></svg>};
+}
+
 # services mega panel: nine numbered links plus a brand card
 sub mega_html {
   my $o = q{<div class="mega" id="mega"><div class="mega-grid">};
@@ -100,11 +108,7 @@ sub mega_html {
   my ($h, $p) = ar()
     ? ('حلول مياه متكاملة منذ 2004', 'من التصميم والحسابات حتى التنفيذ والصيانة الدورية — بفريق واحد.')
     : ('Complete water systems since 2004', 'From design and engineering to installation and scheduled maintenance — one team.');
-  $o .= q{</div><div class="mega-card">}
-      . q{<svg class="waves" viewBox="0 0 280 120" preserveAspectRatio="none" aria-hidden="true">}
-      . q{<path d="M0 34C60 14 120 54 180 34S258 14 280 26V120H0Z" fill="#1d5fae" opacity=".5"/>}
-      . q{<path d="M0 60C60 40 120 80 180 60S258 40 280 52V120H0Z" fill="#2589cd" opacity=".6"/>}
-      . q{<path d="M0 86C60 66 120 106 180 86S258 66 280 78V120H0Z" fill="#6aaade" opacity=".75"/></svg>}
+  $o .= q{</div><div class="mega-card">} . card_waves()
       . qq{<span class="since">EST. 2004</span><h4>$h</h4><p>$p</p>}
       . qq{<a class="cta-pill" href="order.html">@{[t($T{order_now})]}} . ic(fwd(),'ic') . q{</a></div></div>};
   return $o;
@@ -128,29 +132,55 @@ sub social_html {
     . q{</div>};
 }
 
-# mobile: a light side sheet with the colour logo, behind a scrim
-sub drawer_html {
+# mobile menu: a panel that drops out of the capsule under the burger — the
+# numbered pages, the services folding open in place, and a brand card with
+# the quote, WhatsApp and call actions. It stays `hidden` (display:none) until
+# the burger opens it, so nothing inside costs anything on page load.
+sub mmenu_html {
   my ($active,$file) = @_;
-  my $o = q{<div class="scrim" aria-hidden="true"></div>}
-        . qq{<div class="drawer" id="drawer" aria-label="@{[t($T{menu})]}"><div class="drawer-top">}
-        . qq{<img src="${A}assets/img/logo-aquamarine.png" alt="@{[t($C{full})]}" width="1002" height="227">}
-        . qq{<button class="dclose" aria-label="@{[t($T{close})]}">} . ic('close') . q{</button></div><ul>};
+  my $o = qq{<div class="mm" id="mmenu" hidden><nav class="mm-nav" aria-label="@{[t($T{menu})]}"><ul>};
+  my $i = 0;
   for my $n (@NAV) {
     my ($href,$label,$sub) = @$n;
+    my $on  = $href eq $active;
+    my @cls = (($sub ? 'has-sub' : ()), ($on ? 'on' : ()));
+    my $li  = @cls ? qq{<li class="@cls">} : '<li>';
+    my $a   = qq{<a href="$href"} . ($on ? ' aria-current="page"' : '') . '>'
+            . sprintf('<span class="n">%02d</span>', ++$i) . qq{<span class="t">@{[t($label)]}</span>};
     if ($sub) {
-      $o .= qq{<li><div class="drow"><a href="$href">@{[t($label)]}</a><button class="dtoggle" aria-label="@{[t($T{all_services})]}">} . ic('chevd') . q{</button></div><ul class="sub-m">};
-      $o .= qq{<li><a href="service-$_->{slug}.html">@{[t($_->{t})]}</a></li>} for @SERVICES;
-      $o .= '</ul></li>';
+      $o .= qq{$li<div class="mm-row">$a</a>}
+          . qq{<button class="mm-tg" type="button" aria-expanded="false" aria-controls="mm-sub" aria-label="@{[t($T{our_services})]}">} . ic('chevd') . q{</button></div>}
+          . q{<div class="mm-sub" id="mm-sub"><div class="mm-sub-in"><div class="mm-grid">};
+      my $k = 0;
+      for my $s (@SERVICES) {
+        my $cur = $file eq "service-$s->{slug}.html" ? ' class="on" aria-current="page"' : '';
+        $o .= qq{<a href="service-$s->{slug}.html"$cur><span class="mn">@{[numeral($k++)]}</span><span class="st">@{[t($s->{t})]}</span></a>};
+      }
+      $o .= qq{<a class="all" href="services.html"><span class="st">@{[t($T{all_services})]}</span>} . ic(fwd(),'ic') . q{</a>}
+          . q{</div></div></div></li>};
     } else {
-      $o .= qq{<li><a href="$href">@{[t($label)]}</a></li>};
+      $o .= "$li$a" . ic(fwd(),'go') . q{</a></li>};
     }
   }
-  $o .= q{</ul><div class="drawer-foot">}
+  $o .= q{</ul></nav>}
+      . q{<div class="mega-card mm-card">} . card_waves()
+      . qq{<span class="since">EST. 2004</span><h4>@{[t($T{mm_h})]}</h4><p>@{[t($T{contact_lead})]}</p>}
+      . q{<div class="mm-acts">}
       . qq{<a class="cta-pill" href="order.html">@{[t($T{order_now})]}} . ic(fwd(),'ic') . q{</a>}
-      . qq{<a class="btn btn-ghost" href="tel:$C{mobile}" style="justify-content:center">} . ic('phone','ic') . qq{<span class="tnum">$C{mobile}</span></a>}
-      . lang_html($file)
-      . '</div></div>';
+      . qq{<a class="mm-ic" href="https://api.whatsapp.com/send?phone=$C{wa}" target="_blank" rel="noopener" aria-label="@{[t($T{whatsapp})]}">} . ic('wa') . q{</a>}
+      . qq{<a class="mm-ic" href="tel:$C{mobile}" aria-label="@{[t($T{call_us})]}">} . ic('phone') . q{</a>}
+      . q{</div></div>}
+      . qq{<div class="mm-foot"><span>@{[t($T{follow})]}</span>} . social_html() . q{</div>}
+      . q{</div>};
   return $o;
+}
+
+# Microsoft Clarity (heatmaps and session recordings). Written only when
+# content.pl holds a project ID; each session is tagged with its language.
+sub clarity_html {
+  (my $id = $C{clarity} // '') =~ s/[^A-Za-z0-9]//g;
+  return '' unless length $id;
+  return qq{<script>(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y)})(window,document,"clarity","script","$id");clarity("set","lang","$LANG");</script>};
 }
 
 sub head_html {
@@ -176,13 +206,16 @@ sub head_html {
 <link rel="icon" href="${A}assets/img/favicon.png" type="image/png">
 <link rel="stylesheet" href="${A}assets/css/main.css">
 <link rel="stylesheet" href="${A}assets/css/sections.css">
+@{[ $file eq 'index.html' ? qq{<link rel="stylesheet" href="${A}assets/css/home.css">} : '' ]}
+<script>document.documentElement.classList.add('rv');setTimeout(function(){if(!window.rvReady)document.documentElement.classList.remove('rv')},3000)</script>@{[ clarity_html() ]}
 </head>
 <body>
 <div class="progress"><i></i></div>
 HTML
 }
 
-# the floating capsule: logo · nav (with sliding ink + mega panel) · actions
+# the floating capsule: logo · nav (with sliding ink + mega panel) · actions;
+# below 1180px the burger drops the mobile menu out of the same capsule
 sub header_html {
   my ($active,$file) = @_;
   return qq{<header class="hdr"><div class="wrap"><div class="cap">}
@@ -191,10 +224,10 @@ sub header_html {
     . q{<div class="acts">} . lang_html($file)
     . qq{<a class="icon-btn" href="tel:$C{mobile}" aria-label="@{[t($T{call_us})]}">} . ic('phone') . q{</a>}
     . qq{<a class="cta-pill" href="order.html">@{[t($T{order_now})]}} . ic(fwd(),'ic') . q{</a>}
-    . qq{<button class="burger" aria-label="@{[t($T{menu})]}" aria-expanded="false" aria-controls="drawer"><span></span><span></span><span></span></button>}
-    . q{</div>} . mega_html()
+    . qq{<button class="burger" type="button" aria-label="@{[t($T{menu})]}" aria-expanded="false" aria-controls="mmenu"><span></span><span></span><span></span></button>}
+    . q{</div>} . mega_html() . mmenu_html($active,$file)
     . q{</div></div></header>}
-    . drawer_html($active,$file);
+    . q{<div class="mm-scrim" aria-hidden="true"></div>};
 }
 
 sub footer_html {
@@ -224,14 +257,6 @@ sub footer_html {
       <div>
         <h4>@{[t($T{our_services})]}</h4>
         <ul>$svc<li><a href="services.html">@{[t($T{all_services})]}</a></li></ul>
-        <div class="newsletter">
-          <h4 style="margin-top:1.8em">@{[t($T{newsletter})]}</h4>
-          <p style="font-size:.9rem;margin-bottom:1em">@{[t($T{newsletter_p})]}</p>
-          <form class="nl-form" novalidate>
-            <input type="email" placeholder="@{[t($T{newsletter_ph})]}" aria-label="@{[t($T{f_email})]}" required>
-            <button type="submit">@{[t($T{subscribe})]}</button>
-          </form>
-        </div>
       </div>
     </div>
   </div>
@@ -603,7 +628,7 @@ sub video_html {
 }
 
 sub captcha {
-  return qq{<div class="captcha field"><span class="q">@{[t($T{f_sum})]} <b><span class="sum-a">3</span> + <span class="sum-b">4</span></b> ?</span>}
+  return qq{<div class="captcha field"><span class="q">@{[t($T{f_sum})]} <b><span class="sum-a">3</span> + <span class="sum-b">4</span></b> @{[ar() ? '؟' : '?']}</span>}
     . qq{<input class="sum-in" type="text" inputmode="numeric" aria-label="@{[t($T{f_sum_aria})]}" required>}
     . qq{<button type="button" class="reload" aria-label="@{[t($T{f_sum_reload})]}">} . ic('refresh') . q{</button>}
     . qq{<span class="err">@{[t($T{f_sum_err})]}</span></div>};
@@ -644,8 +669,97 @@ sub build_all {
 
   # ---------------------------------------------------------- HOME
   {
+  our @CLIENTS;
   my $slides = qq{<i style="background-image:url('${A}assets/img/a-1.jpg')"></i>}
              . join '', map { qq{<i data-bg="${A}assets/img/a-$_.jpg"></i>} } (2..4);
+
+  # clients ticker — the list twice, so the loop is seamless
+  my $clients = join '', map { '<span>' . t($_) . '</span><i>◆</i>' } (@CLIENTS, @CLIENTS);
+
+  # intro: three capability rows beside a photo mosaic with a rotating seal
+  our @INTRO_CAPS;
+  my %capico = (
+    pool  => '<path d="M2 17c2 0 2-1.4 4-1.4S8 17 10 17s2-1.4 4-1.4 2 1.4 4 1.4 2-1.4 4-1.4"/><path d="M2 21c2 0 2-1.4 4-1.4S8 21 10 21s2-1.4 4-1.4 2 1.4 4 1.4 2-1.4 4-1.4"/><path d="M8 13V5a2 2 0 0 1 4 0"/><path d="M16 13V5a2 2 0 0 0-4 0"/><path d="M8 8h8"/>',
+    drop  => '<path d="M12 2.8s6 6.1 6 10.3a6 6 0 0 1-12 0C6 8.9 12 2.8 12 2.8z"/><path d="M9.4 14.2a2.6 2.6 0 0 0 2.6 2.6"/>',
+    pipes => '<path d="M3 7h6a2 2 0 0 1 2 2v6a2 2 0 0 0 2 2h8"/><path d="M3 4v6"/><path d="M21 14v6"/><path d="M15 7h6"/><path d="M18 4v6"/>',
+  );
+  my $caps = '';
+  for my $c (@INTRO_CAPS) {
+    $caps .= qq{<li><i class="cap-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">$capico{$c->{ico}}</svg></i>}
+           . qq{<div><b>@{[t($c->{t})]}</b><span>@{[t($c->{d})]}</span></div></li>};
+  }
+  my @mos = ('albatros/citadel-03.jpg', 'albatros/makadi-06.jpg', 'albatros/portofino-06.jpg');
+  my $seal = q{<div class="seal" aria-hidden="true">}
+    . q{<svg class="seal-ring" viewBox="0 0 120 120"><defs><path id="seal-path" d="M60 60m-46 0a46 46 0 1 1 92 0a46 46 0 1 1-92 0"/></defs>}
+    . q{<text><textPath href="#seal-path" textLength="289" lengthAdjust="spacing">AQUA MARINE · WATER SYSTEMS · EST. 2004 · </textPath></text></svg>}
+    . q{<svg class="seal-mark" viewBox="0 0 60 60"><clipPath id="seal-clip"><circle cx="30" cy="30" r="30"/></clipPath><g clip-path="url(#seal-clip)">}
+    . q{<rect width="60" height="60" fill="#6aaade"/><path d="M0 0H60V46C50 41 40 51 30 46S10 41 0 46Z" fill="#2589cd"/>}
+    . q{<path d="M0 0H60V31C50 26 40 36 30 31S10 26 0 31Z" fill="#1d5fae"/><path d="M0 0H60V16C50 11 40 21 30 16S10 11 0 16Z" fill="#25306b"/></g></svg></div>};
+
+  # services index: a list that drives a sticky preview (images load on first hover)
+  my ($sx_list, $sx_media) = ('', '');
+  for my $i (0..$#SERVICES) {
+    my $s  = $SERVICES[$i];
+    my $on = $i == 0 ? ' class="on"' : '';
+    my $nn = sprintf('%02d', $i + 1);
+    $sx_list .= qq{<li$on><a href="service-$s->{slug}.html" data-i="$i"><span class="n">$nn</span>}
+              . qq{<span class="t">@{[t($s->{t})]}</span><span class="go">@{[ic(fwd())]}</span></a></li>};
+    my $src = $i == 0
+      ? qq{src="${A}assets/img/$s->{img}"}
+      : qq{src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-src="${A}assets/img/$s->{img}"};
+    $sx_media .= qq{<figure data-i="$i"$on><img $src alt="@{[t($s->{t})]}">}
+               . qq{<figcaption><span class="num">@{[numeral($i)]}</span><h3>@{[t($s->{t})]}</h3><p>@{[t($s->{d})]}</p>}
+               . qq{<a class="cta-pill" href="service-$s->{slug}.html">@{[t($T{service_details})]}} . ic(fwd(),'ic') . q{</a></figcaption></figure>};
+  }
+
+  # projects: bento mosaic
+  my $bento = '<div class="bento">';
+  my $k = 0;
+  for my $p (@PROJECTS) {
+    my $d = sprintf('%.2f', ($k % 3) * 0.08);
+    $bento .= qq{<a class="proj" href="project-$p->{slug}.html" data-rv data-delay="$d">}
+            . qq{<img src="${A}assets/img/$p->{img}" alt="@{[t($p->{t})]}" loading="lazy">}
+            . qq{<div class="proj-in"><span class="tag">$p->{tag}</span><h3>@{[t($p->{t})]}</h3><p>@{[t($p->{d})]}</p>}
+            . qq{<span class="go">@{[t($T{view_project})]} } . ic(fwd(),'ic') . q{</span></div></a>};
+    $k++;
+  }
+  $bento .= '</div>';
+
+  # numbers band, with the logo's wave bands underneath
+  my $waves = q{<svg class="waves" viewBox="0 0 1440 200" preserveAspectRatio="none" aria-hidden="true">}
+            . q{<path d="M0 70C240 30 480 110 720 70S1200 30 1440 60V200H0Z" fill="#1d5fae" opacity=".45"/>}
+            . q{<path d="M0 115C240 75 480 155 720 115S1200 75 1440 105V200H0Z" fill="#2589cd" opacity=".45"/>}
+            . q{<path d="M0 160C240 120 480 200 720 160S1200 120 1440 150V200H0Z" fill="#6aaade" opacity=".5"/></svg>};
+  my $nlocs = scalar @LOCATIONS;
+  my $nums = qq{<div class="nums-grid">}
+    . qq{<div class="num-cell" data-rv><b class="tnum">2004</b><span>@{[t($T{num_est})]}</span></div>}
+    . qq{<div class="num-cell" data-rv data-delay="0.08"><b class="tnum"><span data-count="33">0</span><em>+</em></b><span>@{[t($T{stat_projects})]}</span></div>}
+    . qq{<div class="num-cell" data-rv data-delay="0.16"><b class="tnum"><span data-count="50">0</span><em>+</em></b><span>@{[t($T{stat_pools})]}</span></div>}
+    . qq{<div class="num-cell" data-rv data-delay="0.24"><b class="tnum"><span data-count="$nlocs">0</span></b><span>@{[t($T{num_locs})]}</span></div>}
+    . q{</div>};
+
+  # process as a timeline
+  my $tl = '<ol class="tl" data-rv>';
+  $tl .= qq{<li><span class="tl-dot">$_->{n}</span><h3>@{[t($_->{t})]}</h3><p>@{[t($_->{d})]}</p></li>} for @PROCESS;
+  $tl .= '</ol>';
+
+  # the Albatros albums, each opening its own filtered gallery view
+  my @all = album_items();
+  my $alb = '<div class="alb">';
+  my $ai = 0;
+  for my $al (grep { $_->{glob} } @ALBUMS) {
+    my @mine = grep { $_->{cat} eq $al->{slug} } @all;
+    next unless @mine;
+    my $cover = $al->{cover} || $mine[0]{file};
+    my $d = sprintf('%.2f', $ai * 0.07);
+    $alb .= qq{<a href="gallery.html#$al->{slug}" data-rv data-delay="$d"><img src="${A}assets/img/$cover" alt="@{[t($al->{t})]}" loading="lazy">}
+          . qq{<span class="alb-t"><b>@{[t($al->{t})]}</b><span>@{[photos_n(scalar @mine)]}</span></span></a>};
+    $ai++;
+  }
+  $alb .= '</div>';
+
+  # where we work — an outlined ticker
+  my $locs = join '', map { '<span>' . t($_) . '</span><i>◆</i>' } (@LOCATIONS, @LOCATIONS);
 
   my $body = <<"HTML";
 <section class="hero grain">
@@ -671,30 +785,26 @@ sub build_all {
   </ul></div></div>
 </section>
 
-@{[marquee()]}
+<div class="marq clients"><div class="marq-in">$clients</div></div>
 
-<section class="section">
+<section class="section intro">
   <div class="wrap">
-    <div class="split">
-      <div class="split-media" data-rv="s">
-        <div class="m1"><img src="${A}assets/img/about.jpg" alt="@{[t($C{name})]}" loading="lazy"></div>
-        <div class="m2"><img src="${A}assets/img/aquamarine16.jpg" alt="@{[t($C{name})]}" loading="lazy"></div>
-        <div class="badge-yrs"><b class="tnum">33</b><span>@{[t($T{badge_sub})]}</span></div>
-      </div>
-      <div data-rv>
-        <span class="eyebrow">/ ABOUT US</span>
-        <h2 class="h2" style="margin:1.1rem 0 1rem">@{[t($T{about_h})]}</h2>
+    <div class="intro-grid">
+      <div class="intro-text" data-rv>
+        <span class="eyebrow">/ ABOUT · EST. 2004</span>
+        <h2 class="h2">@{[t($T{intro_h})]}</h2>
         <p class="lead">@{[t($T{about_lead})]}</p>
-        <ul class="ticks">
-          <li>@{[ic('check')]}<span>@{[t($T{about_t1})]}</span></li>
-          <li>@{[ic('check')]}<span>@{[t($T{about_t2})]}</span></li>
-          <li>@{[ic('check')]}<span>@{[t($T{about_t3})]}</span></li>
-          <li>@{[ic('check')]}<span>@{[t($T{about_t4})]}</span></li>
-        </ul>
-        <div style="display:flex;gap:13px;flex-wrap:wrap">
-          <a class="btn" href="about.html">@{[t($T{learn_more})]} @{[ic(fwd(),'ic')]}</a>
+        <ul class="intro-caps">$caps</ul>
+        <div class="intro-btns">
+          <a class="cta-pill" href="about.html">@{[t($T{learn_more})]} @{[ic(fwd(),'ic')]}</a>
           <a class="btn btn-ghost" href="${A}assets/doc/AQUAMARINE_CV.pdf" target="_blank" rel="noopener">@{[ic('dl','ic')]} @{[t($T{profile})]}</a>
         </div>
+      </div>
+      <div class="intro-media" data-rv="s">
+        <figure class="im im-a"><img src="${A}assets/img/$mos[0]" alt="" loading="lazy"></figure>
+        <figure class="im im-b"><img src="${A}assets/img/$mos[1]" alt="" loading="lazy"></figure>
+        <figure class="im im-c"><img src="${A}assets/img/$mos[2]" alt="" loading="lazy"></figure>
+        $seal
       </div>
     </div>
   </div>
@@ -702,30 +812,20 @@ sub build_all {
 
 <section class="section band">
   <div class="wrap">
-    <div class="sec-head"><div class="t" data-rv>
-      <span class="eyebrow">/ HOW WE WORK</span>
-      <h2 class="h2" style="margin-top:1rem">@{[t($T{process_h})]}</h2>
-      <p class="lead" style="margin-top:.7rem">@{[t($T{process_lead})]}</p>
-    </div></div>
-    @{[process_block()]}
-  </div>
-</section>
-
-<section class="section">
-  <div class="wrap">
     <div class="sec-head">
       <div class="t" data-rv>
         <span class="eyebrow">/ OUR SERVICES</span>
-        <h2 class="h2" style="margin-top:1rem">@{[t($T{services_h})]}</h2>
-        <p class="lead" style="margin-top:.7rem">@{[t($T{services_lead})]}</p>
+        <h2 class="h2" style="margin-top:1rem">@{[t($T{sx_h})]}</h2>
+        <p class="lead" style="margin-top:.7rem">@{[t($T{sx_l})]}</p>
       </div>
       <a class="btn btn-ghost" href="services.html" data-rv>@{[t($T{all_services})]} @{[ic(fwd(),'ic')]}</a>
     </div>
-    @{[svc_cards(6)]}
+    <div class="sx">
+      <ol class="sx-list" data-rv>$sx_list</ol>
+      <div class="sx-media" data-rv="s">$sx_media</div>
+    </div>
   </div>
 </section>
-
-@{[imgband('aquamarine20.jpg', t($T{band_h}), t($T{band_lead}), 'about.html', t($T{learn_more}))]}
 
 <section class="section">
   <div class="wrap">
@@ -737,44 +837,69 @@ sub build_all {
       </div>
       <a class="btn btn-ghost" href="projects.html" data-rv>@{[t($T{all_projects})]} @{[ic(fwd(),'ic')]}</a>
     </div>
-    @{[proj_cards(undef,1)]}
-    <div style="margin-top:clamp(38px,5vw,64px)">@{[stats_block()]}</div>
+    $bento
   </div>
 </section>
 
-<section class="section band">
+<section class="nums">
+  $waves
   <div class="wrap">
-    <div class="sec-head"><div class="t" data-rv>
-      <span class="eyebrow">/ WHERE WE WORK</span>
-      <h2 class="h2" style="margin-top:1rem">@{[t($T{locations_h})]}</h2>
-      <p class="lead" style="margin-top:.7rem">@{[t($T{locations_lead})]}</p>
-    </div></div>
-    @{[locations_block()]}
+    <span class="eyebrow" data-rv>/ TRACK RECORD</span>
+    <h2 class="h2" style="margin-top:1rem" data-rv>@{[t($T{nums_h})]}</h2>
+    $nums
   </div>
 </section>
 
 <section class="section">
   <div class="wrap">
-    <div class="sec-head">
-      <div class="t" data-rv>
-        <span class="eyebrow">/ GALLERY</span>
-        <h2 class="h2" style="margin-top:1rem">@{[t($T{gallery_h})]}</h2>
-        <p class="lead" style="margin-top:.7rem">@{[t($T{gallery_lead})]}</p>
-      </div>
-      <a class="btn btn-ghost" href="gallery.html" data-rv>@{[t($T{all_photos})]} @{[ic(fwd(),'ic')]}</a>
-    </div>
-    @{[gal_html(12)]}
+    <div class="sec-head"><div class="t" data-rv>
+      <span class="eyebrow">/ HOW WE WORK</span>
+      <h2 class="h2" style="margin-top:1rem">@{[t($T{process_h})]}</h2>
+      <p class="lead" style="margin-top:.7rem">@{[t($T{process_lead})]}</p>
+    </div></div>
+    $tl
   </div>
 </section>
 
-@{[cta_band()]}
-
 <section class="section band">
-  <div class="wrap-n" style="text-align:center">
-    <span class="eyebrow" data-rv>/ WATCH</span>
-    <h2 class="h2" style="margin:1rem 0 .8rem" data-rv>@{[t($T{video_h})]}</h2>
-    <p class="lead" style="margin-bottom:2.4rem" data-rv>@{[t($T{video_lead})]}</p>
-    @{[video_html()]}
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="t" data-rv>
+        <span class="eyebrow">/ GALLERY</span>
+        <h2 class="h2" style="margin-top:1rem">@{[t($T{alb_h})]}</h2>
+        <p class="lead" style="margin-top:.7rem">@{[t($T{alb_l})]}</p>
+      </div>
+      <a class="btn btn-ghost" href="gallery.html" data-rv>@{[t($T{all_photos})]} @{[ic(fwd(),'ic')]}</a>
+    </div>
+    $alb
+  </div>
+</section>
+
+<section class="section" style="padding-bottom:0">
+  <div class="wrap">
+    <div class="sec-head" style="margin-bottom:clamp(20px,2.4vw,30px)"><div class="t" data-rv>
+      <span class="eyebrow">/ WHERE WE WORK</span>
+      <h2 class="h2" style="margin-top:1rem">@{[t($T{locations_h})]}</h2>
+    </div></div>
+  </div>
+  <div class="omarq"><div class="omarq-in">$locs</div></div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="wt">
+      @{[video_html()]}
+      <div class="wt-card" data-rv data-delay="0.1">
+        <span class="eyebrow">/ WATCH · TALK</span>
+        <h2 class="h2">@{[t($T{wt_h})]}</h2>
+        <p class="lead">@{[t($T{wt_l})]}</p>
+        <a class="wt-tel" href="tel:$C{mobile}">@{[ic('phone')]} $C{mobile}</a>
+        <div class="wt-btns">
+          <a class="cta-pill" href="order.html">@{[t($T{order_now})]} @{[ic(fwd(),'ic')]}</a>
+          <a class="btn btn-ghost" href="https://api.whatsapp.com/send?phone=$C{wa}" target="_blank" rel="noopener">@{[ic('wa','ic')]} @{[t($T{whatsapp})]}</a>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 HTML
@@ -1194,7 +1319,7 @@ HTML
       <div class="formcard" data-rv>
         <span class="eyebrow">/ SEND A MESSAGE</span>
         <h2 class="h2" style="margin:1rem 0 1.6rem">@{[t($T{send_message})]}</h2>
-        <form data-validate data-wa="$C{wa}" data-subject="@{[t($T{wa_subject_c})]}" novalidate>
+        <form data-validate data-track="contact_form" data-wa="$C{wa}" data-subject="@{[t($T{wa_subject_c})]}" novalidate>
           @{[form_msg()]}
           <div class="fgrid">
             <div class="field"><label for="c-name">@{[t($T{f_name})]} <i>*</i></label><input id="c-name" name="name" type="text" placeholder="@{[t($T{f_name_ph})]}" required><span class="err">@{[t($T{f_name_err})]}</span></div>
@@ -1234,7 +1359,7 @@ HTML
       <div class="formcard" data-rv>
         <span class="eyebrow">/ REQUEST A QUOTE</span>
         <h2 class="h2" style="margin:1rem 0 1.6rem">@{[t($T{order_h})]}</h2>
-        <form data-validate data-wa="$C{wa}" data-subject="@{[t($T{wa_subject_o})]}" novalidate>
+        <form data-validate data-track="order_form" data-wa="$C{wa}" data-subject="@{[t($T{wa_subject_o})]}" novalidate>
           @{[form_msg()]}
           <div class="fgrid">
             <div class="field"><label for="o-name">@{[t($T{f_name})]} <i>*</i></label><input id="o-name" name="name" type="text" placeholder="@{[t($T{f_name_ph})]}" required><span class="err">@{[t($T{f_name_err})]}</span></div>
