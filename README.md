@@ -60,6 +60,7 @@ aquamarine/
 | ما تريد تعديله · What to edit | المتغيّر · Variable |
 |---|---|
 | العنوان والتليفونات والإيميل والسوشيال | `%C` |
+| اسم المطوّر ورابطه آخر الفوتر · Developer credit | `%C{dev}` · `%C{dev_url}` |
 | الخدمات · Services | `@SERVICES` |
 | المشروعات · Projects | `@PROJECTS` |
 | سابقة الأعمال · Track record (38) | `@WORKS` |

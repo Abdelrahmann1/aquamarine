@@ -237,6 +237,10 @@ sub footer_html {
   $links .= qq{<li><a href="order.html">@{[t($T{order_now})]}</a></li>};
   my $svc = '';
   $svc .= qq{<li><a href="service-$_->{slug}.html">@{[t($_->{t})]}</a></li>} for @SERVICES[0..5];
+  # the developer's name closes the page, as a link once content.pl gives it a URL
+  my $dev = $C{dev_url}
+    ? qq{<a class="f-dev" href="$C{dev_url}" target="_blank" rel="noopener">$C{dev}</a>}
+    : qq{<b class="f-dev">$C{dev}</b>};
 
   return <<"HTML" . fabs_html() . qq{<script src="${A}assets/js/main.js"></script>\n</body>\n</html>\n};
 <footer class="footer">
@@ -265,6 +269,7 @@ sub footer_html {
     <span>© <span class="yr">2025</span> @{[t($T{all_rights})]} — @{[t($C{full})]}</span>@{[social_html()]}
     <a href="${A}assets/doc/AQUAMARINE_CV.pdf" target="_blank" rel="noopener" style="display:inline-flex;gap:.5em;align-items:center">@{[ic('file')]} @{[t($T{profile})]}</a>
   </div></div>
+  <div class="f-credit"><div class="wrap"><span>@{[t($T{dev_by})]}</span>$dev</div></div>
 </footer>
 HTML
 }

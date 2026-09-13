@@ -502,6 +502,15 @@ html.menu-open{overflow:hidden}
 .f-contact a:hover{color:#fff}
 .f-bottom{border-top:1px solid var(--line-dark)}
 .f-bottom .wrap{padding-block:20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:.82rem}
+/* developer credit: the last line of every page */
+.f-credit{border-top:1px solid var(--line-dark);background:rgba(0,0,0,.18)}
+.f-credit .wrap{padding-block:14px;display:flex;align-items:center;justify-content:center;gap:.7em;font-size:.78rem;color:var(--foam-2)}
+.f-dev{
+  display:inline-flex;align-items:center;padding:.3em .64em .3em .82em;border:1px solid var(--line-dark);border-radius:99px;
+  font-size:.72rem;font-weight:700;letter-spacing:.18em;line-height:1.4;color:#fff;direction:ltr;
+  transition:border-color .3s var(--ease),background .3s var(--ease);
+}
+a.f-dev:hover{border-color:var(--aqua-l);background:rgba(79,203,228,.12)}
 
 .fabs{position:fixed;inset-inline-end:18px;bottom:18px;z-index:45;display:grid;gap:10px}
 .fab{

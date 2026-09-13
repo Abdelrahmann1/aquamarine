@@ -34,6 +34,9 @@ our (%C, @SERVICES, @PROJECTS, @WORKS, @GALLERY, @FULLSERVICES,
   # Microsoft Clarity project ID — clarity.microsoft.com → your project →
   # Settings → Overview (a short code such as "abc123xyz0"). Empty = no tracking.
   clarity => '',
+  # developer credit on the last line of the footer; a dev_url makes the name a link
+  dev     => 'SMI',
+  dev_url => '',
   map     => 'https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d215.66515326588038!2d31.279779304389386!3d30.133043084067662!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x3a82f39a060ab2ab!2sHyper%20Ferjany!5e0!3m2!1sen!2seg!4v1653566862459!5m2!1sen!2seg',
 );
 
@@ -318,6 +321,7 @@ push @GALLERY, qw(
   phone_label    => ['الهاتف','Phone'],
   address_label  => ['العنوان','Address'],
   all_rights     => ['جميع الحقوق محفوظة','All rights reserved'],
+  dev_by         => ['تم التطوير بواسطة','Developed by'],
   site_links     => ['روابط الموقع','Site links'],
   our_services   => ['خدماتنا','Our services'],
   all_services   => ['كل الخدمات','All services'],
