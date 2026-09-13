@@ -5,7 +5,7 @@
 #      perl build.pl
 #
 #  Content lives in content.pl. This file is markup only.
-#  Arabic (RTL) is written to  ./          English (LTR) to  ./en/
+#  English (LTR) is written to  ./          Arabic (RTL) to  ./ar/
 # ============================================================
 use strict;
 use warnings;
@@ -116,7 +116,7 @@ sub mega_html {
 
 sub lang_html {
   my ($file) = @_;
-  my $other = ar() ? "en/$file" : "../$file";
+  my $other = ar() ? "../$file" : "ar/$file";
   my ($cur,$alt,$altlang) = ar() ? ('AR','EN','en') : ('EN','AR','ar');
   return qq{<div class="lang"><span class="on">$cur</span>}
        . qq{<a href="$other" hreflang="$altlang" lang="$altlang">$alt</a></div>};
@@ -185,8 +185,8 @@ sub clarity_html {
 
 sub head_html {
   my ($title,$desc,$file) = @_;
-  my $ar_href = ar() ? $file : "../$file";
-  my $en_href = ar() ? "en/$file" : $file;
+  my $ar_href = ar() ? $file : "ar/$file";
+  my $en_href = ar() ? "../$file" : $file;
   return <<"HTML";
 <!DOCTYPE html>
 <html lang="$LANG" dir="$DIR">
@@ -203,6 +203,7 @@ sub head_html {
 <meta property="og:locale" content="@{[ ar() ? 'ar_EG' : 'en_US' ]}">
 <link rel="alternate" hreflang="ar" href="$ar_href">
 <link rel="alternate" hreflang="en" href="$en_href">
+<link rel="alternate" hreflang="x-default" href="$en_href">
 <link rel="icon" href="${A}assets/img/favicon.png" type="image/png">
 <link rel="stylesheet" href="${A}assets/css/main.css">
 <link rel="stylesheet" href="${A}assets/css/sections.css">
@@ -1403,14 +1404,15 @@ HTML
 #  RUN BOTH LANGUAGES
 # ============================================================
 print "Building Aqua Marine site...\n";
-mkdir 'en' unless -d 'en';
+mkdir 'ar' unless -d 'ar';
 
-($L,$A,$OUT,$DIR,$LANG) = (0, '',    '.',    'rtl', 'ar');
-my $ar = build_all();
-print "  Arabic  (RTL) -> ./      $ar pages\n";
-
-($L,$A,$OUT,$DIR,$LANG) = (1, '../', './en', 'ltr', 'en');
+# English is the default language, at the root; Arabic lives under /ar/
+($L,$A,$OUT,$DIR,$LANG) = (1, '',    '.',    'ltr', 'en');
 my $en = build_all();
-print "  English (LTR) -> ./en/   $en pages\n";
+print "  English (LTR) -> ./      $en pages\n";
+
+($L,$A,$OUT,$DIR,$LANG) = (0, '../', './ar', 'rtl', 'ar');
+my $ar = build_all();
+print "  Arabic  (RTL) -> ./ar/   $ar pages\n";
 
 print "Done. ", $ar + $en, " pages total.\n";

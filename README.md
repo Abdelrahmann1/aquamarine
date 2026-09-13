@@ -1,10 +1,10 @@
 # أكوا مارين ووتر سيستمز — Aqua Marine Water Systems
 
 إعادة تصميم كاملة لموقع [aquamarine-ws.com](https://aquamarine-ws.com/) كموقع ثابت حديث
-**بلغتين**: العربية (RTL) في الجذر، والإنجليزية (LTR) تحت `/en/` — بنفس محتوى الموقع الأصلي وأصوله.
+**بلغتين**: الإنجليزية (LTR) في الجذر كلغة افتراضية، والعربية (RTL) تحت `/ar/` — بنفس محتوى الموقع الأصلي وأصوله.
 
 A ground-up redesign of aquamarine-ws.com as a modern static site, **bilingual**:
-Arabic (RTL) at the root, English (LTR) under `/en/`, carrying the original content and assets.
+English (LTR) at the root as the default, Arabic (RTL) under `/ar/`, carrying the original content and assets.
 
 ---
 
@@ -14,8 +14,8 @@ Arabic (RTL) at the root, English (LTR) under `/en/`, carrying the original cont
 perl serve.pl 8099
 ```
 
-- العربية · Arabic → <http://127.0.0.1:8099/>
-- English → <http://127.0.0.1:8099/en/>
+- English → <http://127.0.0.1:8099/>
+- العربية · Arabic → <http://127.0.0.1:8099/ar/>
 
 للنشر ارفع المجلد كما هو إلى أي استضافة ثابتة (Netlify, Vercel, GitHub Pages, Apache, Nginx).
 لا يحتاج الموقع إلى PHP أو قاعدة بيانات.
@@ -33,8 +33,8 @@ aquamarine/
 ├── index.html  about.html  services.html  service-*.html ×9
 ├── projects.html  project-*.html ×6
 ├── works.html  gallery.html  videos.html  contact.html  order.html
-│                              ← 24 صفحة عربية (RTL)
-├── en/                        ← نفس الـ24 صفحة بالإنجليزية (LTR)
+│                              ← 24 صفحة إنجليزية (LTR) — اللغة الافتراضية
+├── ar/                        ← نفس الـ24 صفحة بالعربية (RTL)
 │
 └── assets/
     ├── css/main.css           التوكنز والهيدر والفوتر والأزرار + قلب الاتجاه

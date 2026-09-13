@@ -29,9 +29,20 @@ while (my $c = $d->accept) {
   if (my $r = $c->get_request) {
     my $p = $r->uri->path;
     $p =~ s/%([0-9A-Fa-f]{2})/chr(hex($1))/ge;
-    $p = '/index.html' if $p eq '/';
-    $p =~ s{^/}{};
     $p =~ s{\.\.}{}g;
+    # a folder URL serves its index.html ("/", "/ar/"); "/ar" first gets its
+    # trailing slash, so the page's relative links resolve inside the folder
+    if ($p ne '/' && $p !~ m{/$} && -d substr($p, 1)) {
+      my $res = HTTP::Response->new(301);
+      $res->header('Location' => "$p/");
+      $res->header('Connection' => 'close');
+      $c->send_response($res);
+      $c->close;
+      undef $c;
+      next;
+    }
+    $p .= 'index.html' if $p =~ m{/$};
+    $p =~ s{^/}{};
     if (-f $p) {
       my ($ext) = $p =~ /\.([A-Za-z0-9]+)$/;
       my $type = $MIME{lc($ext || '')} || 'application/octet-stream';
