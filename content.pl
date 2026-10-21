@@ -19,11 +19,10 @@ our (%C, @SERVICES, @PROJECTS, @WORKS, @GALLERY, @FULLSERVICES,
   full    => ['شركة أكوا مارين ووتر سيستمز', 'Aqua Marine Water Systems'],
   addr    => ['2 شارع العطار، بهتيم، شبرا الخيمة، القليوبية',
               '2 El Attar St., Bahtim, Shubra El Kheima, Qalyubia'],
-  mobile  => '01006637481',
-  mobile2 => '01005551386',
-  intl    => '201006637481',
+  mobile  => '01005551386',
+  intl    => '201005551386',
   land    => '202-42220220',
-  wa      => '201006637481',
+  wa      => '201005551386',
   email   => 'info' . '@' . 'aquamarine-ws.com',
   fb      => 'https://www.facebook.com/aquamarinewatersystem',
   ig      => 'https://www.instagram.com/',
@@ -86,27 +85,27 @@ our (%C, @SERVICES, @PROJECTS, @WORKS, @GALLERY, @FULLSERVICES,
 #  Projects
 # ------------------------------------------------------------
 @PROJECTS = (
-  { slug=>'porto-sokhna', tag=>'RESORT', img=>'aquamarine25(1).jpg',
+  { slug=>'porto-sokhna', sec=>'hospitality', tag=>'RESORT', img=>'aquamarine25(1).jpg',
     t=>['بورتو السخنة','Porto Sokhna'],
     d=>['مشروع الأبراج لشركة عامر جروب: 3 حمامات سباحة بالمرحلة الأولى و9 حمامات بالمرحلة الثانية، إلى جانب الأعمال الكهروميكانيكية لمنطقة البانوراما ونوافير المدينة العتيقة بالأسكاي مول.',
         "Amer Group's Towers project: three pools in phase one and nine in phase two, alongside the electromechanical works for the Panorama area and the Old Town fountains at Sky Mall."] },
-  { slug=>'alf-leila-sharm', tag=>'HOTEL', img=>'aquamarine10(1).jpg',
+  { slug=>'alf-leila-sharm', sec=>'hospitality', tag=>'HOTEL', img=>'aquamarine10(1).jpg',
     t=>['فندق ألف ليلة وليلة — شرم الشيخ','Alf Leila Wa Leila Hotel — Sharm El Sheikh'],
     d=>['تنفيذ جميع الأعمال المائية الموجودة بالفندق من شلالات ونوافير.',
         'All water features across the hotel, from waterfalls to fountains.'] },
-  { slug=>'continental-hurghada', tag=>'HOTEL', img=>'aquamarine23(1).jpg',
+  { slug=>'continental-hurghada', sec=>'hospitality', tag=>'HOTEL', img=>'aquamarine23(1).jpg',
     t=>['كونتننتال الغردقة','Continental Hurghada'],
     d=>['أعمال حمامات السباحة والمعدات الكهروميكانيكية وشبكات المياه بالمنشأة الفندقية.',
         'Swimming pool works, electromechanical equipment and water networks throughout the hotel.'] },
-  { slug=>'cairo-modern-school', tag=>'SCHOOL', img=>'aquamarine5(1).jpg',
+  { slug=>'cairo-modern-school', sec=>'commercial', tag=>'SCHOOL', img=>'aquamarine5(1).jpg',
     t=>['مدرسة القاهرة الإنجليزية الحديثة','Cairo Modern English School'],
     d=>['حمام سباحة أوليمبي بفرع ميراج سيتي، وأعمال تعديلات غرفة المعدات بفرع مصر الجديدة.',
         'An Olympic pool at the Mirage City campus, plus plant-room modifications at the Heliopolis campus.'] },
-  { slug=>'villa-marina', tag=>'VILLA', img=>'aquamarine29(1).jpg',
+  { slug=>'villa-marina', sec=>'residential', tag=>'VILLA', img=>'aquamarine29(1).jpg',
     t=>['فيلا خاصة — مارينا','Private Villa — Marina'],
     d=>['حمام سباحة متكامل بأعماله المدنية والكهروميكانيكية ضمن أعمال الفلل الخاصة بالساحل الشمالي.',
         'A complete pool with its civil and electromechanical works, part of our private villa portfolio on the North Coast.'] },
-  { slug=>'sokhna-sugar-factory', tag=>'INDUSTRIAL', img=>'eeee.jpg',
+  { slug=>'sokhna-sugar-factory', sec=>'industrial', tag=>'INDUSTRIAL', img=>'eeee.jpg',
     t=>['مصنع السكر — السخنة','Sokhna Sugar Factory'],
     d=>['أعمال معالجة المياه وشبكات التغذية والصرف الصناعية بالمصنع.',
         'Water treatment works and industrial supply and drainage networks.'] },
@@ -115,6 +114,29 @@ our (%C, @SERVICES, @PROJECTS, @WORKS, @GALLERY, @FULLSERVICES,
 # ------------------------------------------------------------
 #  Previous works ledger
 # ------------------------------------------------------------
+# ------------------------------------------------------------
+#  Swimming pool price list (service-pool-build.html)
+#  Prices in Egyptian pounds, every size 1.20 m deep.
+# ------------------------------------------------------------
+our %POOL_PRICES = (
+  unit  => ['م','m'],
+  sizes => ['4 × 6', '5 × 7', '6 × 8', '6 × 10'],
+  rows  => [
+    { t=>['سكيمر','Skimmer'],     p=>[ 961925, 1402900, 1923850, 2404812] },
+    { t=>['أوفر فلو','Overflow'], p=>[1570887, 2291028, 3135875, 3919843] },
+    { t=>['هورايزون','Horizon'],  p=>[1370461, 1998721, 2731867, 3414833] },
+  ],
+);
+
+# the four sectors the projects page filters by
+our @SECTORS = qw(residential commercial hospitality industrial);
+our %SECTOR  = (
+  residential => ['سكني','Residential'],
+  commercial  => ['تجاري','Commercial'],
+  hospitality => ['فنادق ومنتجعات','Hospitality'],
+  industrial  => ['صناعي','Industrial'],
+);
+
 %CATNAME = (
   pools => ['حمامات سباحة ونوافير','Pools & Fountains'],
   intl  => ['أعمال خارج مصر','International'],
@@ -174,7 +196,7 @@ our (%C, @SERVICES, @PROJECTS, @WORKS, @GALLERY, @FULLSERVICES,
        ['توريد وتركيب سلالم حمام السباحة الرئيسي — بورتو كايرو','Supply and installation of the main pool ladders — Porto Cairo'],
        ['إعادة تهيئة نوافير المدينة العتيقة بالأسكاي مول','Refurbishment of the Old Town fountains at Sky Mall'],
        ['تأسيس وتنفيذ حمامات سباحة متكاملة بوحدة فلترة ومسخنة بفيلات منطقة الهاند 1','Complete pools with filtration and heating units for the Hand 1 villas'],
-       ['أعمال اختبار شبكات بحيرة بورتو مارينا — العلمين','Network testing for the Porto Marina lagoon — El Alamein'],
+       ['أعمال اختبار شبكات بحيرة بورتو مارينا','Network testing for the Porto Marina lagoon'],
        ['حلول ميكانيكية لحمام سباحة بمنطقة الهاوين — بورتو جولف السخنة','Mechanical remediation for a pool in the Hawain area — Porto Golf Sokhna'],
        ['حلول ميكانيكية لحمامي سباحة بالمرحلة الأولى — بورتو ساوث بيتش','Mechanical remediation for two phase-one pools — Porto South Beach']] },
  { c=>'pools', t=>['قرية موسى كوست — رأس سدر','Moses Coast Resort — Ras Sudr'], d=>[] },
@@ -185,10 +207,10 @@ our (%C, @SERVICES, @PROJECTS, @WORKS, @GALLERY, @FULLSERVICES,
    d=>[['جميع الأعمال المائية الموجودة بها من شلالات ونوافير','All water features on site, waterfalls and fountains alike']] },
  { c=>'pools', t=>['نادي جزيرة الورد — المنصورة','Gezirat El Ward Club — Mansoura'],
    d=>[['النادي الصحي','Health club'],['مغطس','Plunge pool'],['غرفة سونا','Sauna room'],['حمام سباحة','Swimming pool']] },
- { c=>'pools', t=>['مدرسة بايونيرز للغات — 6 أكتوبر','Pioneers Language School — 6th of October'],
+ { c=>'pools', t=>['مدرسة بايونيرز للغات','Pioneers Language School'],
    d=>[['عدد 2 حمام سباحة','2 swimming pools']] },
  { c=>'pools', t=>['مجموعة فيلات خاصة','Private villa portfolio'],
-   d=>[['القاهرة الجديدة ومدينة العبور و6 أكتوبر والساحل الشمالي وشرم الشيخ','New Cairo, Obour City, 6th of October, the North Coast and Sharm El Sheikh']] },
+   d=>[['القاهرة الجديدة ومدينة العبور والساحل الشمالي وشرم الشيخ','New Cairo, Obour City, the North Coast and Sharm El Sheikh']] },
  { c=>'pools', t=>['النادي الأهلي — الجزيرة','Al Ahly Club — Gezira'],
    d=>[['تعديلات في غرفة المعدات','Plant-room modifications']] },
  { c=>'pools', t=>['النادي الأهلي — مدينة نصر','Al Ahly Club — Nasr City'],
@@ -268,8 +290,8 @@ our (%C, @SERVICES, @PROJECTS, @WORKS, @GALLERY, @FULLSERVICES,
 # ------------------------------------------------------------
 @LOCATIONS = (
   ['شرم الشيخ','Sharm El Sheikh'], ['الغردقة','Hurghada'], ['العين السخنة','Ain Sokhna'],
-  ['الساحل الشمالي','North Coast'], ['العلمين','El Alamein'], ['رأس سدر','Ras Sudr'],
-  ['القاهرة','Cairo'], ['الجيزة','Giza'], ['6 أكتوبر','6th of October'],
+  ['الساحل الشمالي','North Coast'], ['رأس سدر','Ras Sudr'],
+  ['القاهرة','Cairo'], ['الجيزة','Giza'],
   ['المنصورة','Mansoura'], ['المنيا','Minya'], ['أسوان','Aswan'],
   ['قطر','Qatar'], ['السودان','Sudan'],
 );
@@ -298,8 +320,8 @@ push @GALLERY, qw(
   ['services.html', ['الخدمات','Services'], 'sub'],
   ['projects.html', ['المشروعات','Projects']],
   ['works.html',    ['سابقة الأعمال','Track Record']],
-  ['gallery.html',  ['ألبوم الصور','Gallery']],
-  ['videos.html',   ['الفيديوهات','Video']],
+  ['gallery.html',  ['ألبوم الصور','Gallery'], undef, 'minor'],
+  ['videos.html',   ['الفيديوهات','Video'],  undef, 'minor'],
   ['contact.html',  ['اتصل بنا','Contact']],
 );
 
@@ -327,6 +349,14 @@ push @GALLERY, qw(
   all_services   => ['كل الخدمات','All services'],
   all_projects   => ['كل المشروعات','All projects'],
   all_photos     => ['كل الصور','All photos'],
+  prices_h       => ['أسعار حمامات السباحة','Swimming pool prices'],
+  prices_lead    => ['أسعار استرشادية لحمام سباحة متكامل بعمق 1.20 متر، بالجنيه المصري.',
+                     'Indicative prices for a complete pool 1.20 m deep, in Egyptian pounds.'],
+  prices_type    => ['النوع','Type'],
+  prices_note    => ['السعر النهائي يتحدد بعد معاينة الموقع، ويختلف حسب المقاس والتشطيب والمعدات المطلوبة.',
+                     'The final price follows a site survey, and varies with size, finish and the equipment specified.'],
+  jump_prices    => ['الأسعار','Prices'],
+  all_videos     => ['كل الفيديوهات','All videos'],
   newsletter     => ['النشرة البريدية','Newsletter'],
   newsletter_p   => ['اشترك لتلقي آخر الأخبار حول خدماتنا ومشروعاتنا.','Subscribe for news about our services and projects.'],
   newsletter_ph  => ['أدخل بريدك الإلكتروني','Enter your email'],

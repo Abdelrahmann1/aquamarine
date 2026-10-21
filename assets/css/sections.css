@@ -655,6 +655,26 @@
 .form-msg svg{width:17px;height:17px;flex:none;margin-top:.3em}
 
 /* ============================================================
+   PRICE TABLE — sizes across the head, pool types down the side.
+   Too wide for a phone, so it scrolls inside its own frame.
+   ============================================================ */
+.ptable-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:var(--rad-lg);background:var(--card);box-shadow:var(--shadow-s)}
+.ptable{width:100%;min-width:540px;border-collapse:collapse}
+.ptable th,.ptable td{padding:clamp(13px,1.6vw,19px) clamp(12px,1.6vw,20px);text-align:start;border-bottom:1px solid var(--line);white-space:nowrap}
+.ptable thead th{
+  background:var(--paper-2);border-bottom-color:var(--line-2);
+  font-size:.83rem;font-weight:600;color:var(--ink-2);
+}
+.ptable tbody th{font-size:.97rem;font-weight:600;color:var(--ink)}
+.ptable tbody td{font-size:.95rem;color:var(--ink-2)}
+.ptable tbody tr{transition:background .3s var(--ease)}
+.ptable tbody tr:hover{background:var(--paper-2)}
+.ptable tbody tr:hover td{color:var(--ink)}
+.ptable tbody tr:last-child th,.ptable tbody tr:last-child td{border-bottom:0}
+/* prices read left-to-right in both languages, hugging the column's start edge */
+[dir="rtl"] .ptable td.tnum{text-align:right}
+
+/* ============================================================
    MISC
    ============================================================ */
 .pill-row{display:flex;gap:9px;flex-wrap:wrap;margin-top:1.5em}

@@ -337,30 +337,35 @@
     });
   });
 
-  /* ---------- filters: works ledger chips + gallery album cards ---------- */
-  var filters = $$('.chip[data-filter], .album[data-filter]');
-  if (filters.length) {
-    filters.forEach(function (btn) {
+  /* ---------- filters: chip rows and gallery album cards ----------
+     A group filters only the list its data-for names, so one page can carry
+     two: the projects page filters its cards without touching its photos. */
+  $$('.chips, .albums').forEach(function (group) {
+    var btns = $$('[data-filter]', group);
+    if (!btns.length) return;
+    var target = group.getAttribute('data-for');
+    var items = $$((target ? target + ' ' : '') + '[data-cat]');
+    btns.forEach(function (btn) {
       btn.addEventListener('click', function () {
         var f = btn.getAttribute('data-filter');
-        filters.forEach(function (b) {
+        btns.forEach(function (b) {
           var on = b === btn;
           b.classList.toggle('on', on);
           b.setAttribute('aria-pressed', on ? 'true' : 'false');
         });
-        $$('[data-cat]').forEach(function (el) {
+        items.forEach(function (el) {
           el.hidden = !(f === 'all' || el.getAttribute('data-cat') === f);
         });
         // ledger rows carry a running number; renumber the visible ones
         var n = 0;
-        $$('.lrow').forEach(function (row) {
-          if (row.hidden) return;
+        items.forEach(function (row) {
+          if (row.hidden || !row.classList.contains('lrow')) return;
           var cell = row.querySelector('.n');
           if (cell) cell.textContent = String(++n).padStart(2, '0');
         });
       });
     });
-  }
+  });
 
   /* ---------- home: services index (the list drives a sticky preview) ---------- */
   var sx = $('.sx');

@@ -14,7 +14,8 @@ binmode(STDOUT, ':encoding(UTF-8)');
 
 our (%C, @SERVICES, @PROJECTS, @WORKS, @GALLERY, @FULLSERVICES,
      %T, %CATNAME, @NAV, @PROCESS, @LOCATIONS,
-     %SVC_FEATURES, %PROJ_FACTS, %PROJ_WORKS, @GENERIC_SCOPE);
+     %SVC_FEATURES, %PROJ_FACTS, %PROJ_WORKS, @GENERIC_SCOPE,
+     @SECTORS, %SECTOR, %POOL_PRICES);
 
 do './content.pl' or die "content.pl: " . ($@ || $!);
 
@@ -77,7 +78,8 @@ sub nav_html {
   # the first <li> is the white "ink" that JS slides under the hovered link
   my $o = '<ul class="nav"><li class="ink" aria-hidden="true"></li>';
   for my $n (@NAV) {
-    my ($href,$label,$sub) = @$n;
+    my ($href,$label,$sub,$minor) = @$n;
+    next if $minor;   # gallery and video live on the projects page now
     my $on = ($href eq $active) ? ' active' : '';
     if ($sub) {
       $o .= qq{<li class="has-mega$on"><a href="$href" aria-haspopup="true" aria-expanded="false" aria-controls="mega">@{[t($label)]}} . ic('chevd','car') . q{</a></li>};
@@ -141,7 +143,8 @@ sub mmenu_html {
   my $o = qq{<div class="mm" id="mmenu" hidden><nav class="mm-nav" aria-label="@{[t($T{menu})]}"><ul>};
   my $i = 0;
   for my $n (@NAV) {
-    my ($href,$label,$sub) = @$n;
+    my ($href,$label,$sub,$minor) = @$n;
+    next if $minor;
     my $on  = $href eq $active;
     my @cls = (($sub ? 'has-sub' : ()), ($on ? 'on' : ()));
     my $li  = @cls ? qq{<li class="@cls">} : '<li>';
@@ -439,20 +442,53 @@ sub svc_cards {
 }
 
 sub proj_cards {
-  my ($skip,$feature) = @_;
+  my ($skip,$feature,$id) = @_;
   my $cls = $feature ? 'proj-grid feature' : 'proj-grid';
-  my $o = qq{<div class="$cls">};
+  my $o = qq{<div class="$cls"} . ($id ? qq{ id="$id"} : '') . '>';
   my $n = 0;
   for my $p (@PROJECTS) {
     next if $skip && $p->{slug} eq $skip;
     my $d = sprintf('%.2f', ($n % 3) * 0.09);
-    $o .= qq{<a class="proj" href="project-$p->{slug}.html" data-rv data-delay="$d">}
+    $o .= qq{<a class="proj" href="project-$p->{slug}.html" data-cat="$p->{sec}" data-rv data-delay="$d">}
        . qq{<img src="${A}assets/img/$p->{img}" alt="@{[t($p->{t})]}" loading="lazy">}
        . qq{<div class="proj-in"><span class="tag">$p->{tag}</span><h3>@{[t($p->{t})]}</h3><p>@{[t($p->{d})]}</p>}
        . qq{<span class="go">@{[t($T{view_project})]} } . ic(fwd(),'ic') . q{</span></div></a>};
     $n++;
   }
   return $o . '</div>';
+}
+
+# pool price list: sizes across the head, pool types down the side.
+# Prices stay in Western digits in both languages, the way they are quoted.
+sub price_section {
+  my $u  = t($POOL_PRICES{unit});
+  my $th = qq{<th scope="col">@{[t($T{prices_type})]}</th>};
+  $th .= qq{<th scope="col">$_ $u</th>} for @{ $POOL_PRICES{sizes} };
+  my $tb = '';
+  for my $r (@{ $POOL_PRICES{rows} }) {
+    $tb .= qq{<tr><th scope="row">@{[t($r->{t})]}</th>};
+    for my $p (@{ $r->{p} }) {
+      1 while $p =~ s/^(\d+)(\d{3})/$1,$2/;   # thousands separators
+      $tb .= qq{<td class="tnum">$p</td>};
+    }
+    $tb .= '</tr>';
+  }
+  return <<"HTML";
+<section class="section" id="prices">
+  <div class="wrap">
+    <div class="sec-head"><div class="t" data-rv>
+      <span class="eyebrow">/ PRICING</span>
+      <h2 class="h2" style="margin-top:1rem">@{[t($T{prices_h})]}</h2>
+      <p class="lead" style="margin-top:.7rem">@{[t($T{prices_lead})]}</p>
+    </div><a class="btn btn-accent" href="order.html" data-rv>@{[t($T{order_service})]} @{[ic(fwd(),'ic')]}</a></div>
+    <div class="ptable-wrap" data-rv><table class="ptable">
+      <thead><tr>$th</tr></thead>
+      <tbody>$tb</tbody>
+    </table></div>
+    <div class="note" style="margin-top:1.4rem" data-rv>@{[ic('info')]} @{[t($T{prices_note})]}</div>
+  </div>
+</section>
+HTML
 }
 
 sub process_block {
@@ -557,7 +593,7 @@ sub gal_html {
   my @items = !@_                   ? album_items()
             : ref($_[0]) eq 'HASH'  ? @_
             :                         preview_items($_[0]);
-  my $o = '<div class="gal">';
+  my $o = '<div class="gal" id="gal">';
   my $n = 0;
   for my $it (@items) {
     my $src = "assets/img/$it->{file}";
@@ -589,7 +625,7 @@ sub albums_n { return count_n($_[0], ['ألبوم واحد','ألبومان','أ
 sub album_shelf {
   my @all = album_items();
   my $total = scalar @all;
-  my $o = qq{<div class="albums" role="group" aria-label="@{[t($T{albums_h})]}">}
+  my $o = qq{<div class="albums" data-for="#gal" role="group" aria-label="@{[t($T{albums_h})]}">}
         . qq{<button type="button" class="album album-all on" data-filter="all" aria-pressed="true">}
         . qq{<span class="cv"><b class="tnum">$total</b></span>}
         . qq{<span class="nm">@{[t($T{all_photos})]}</span><span class="ct">@{[photos_n($total)]}</span></button>};
@@ -1014,6 +1050,7 @@ HTML
   for my $i (0..$#SERVICES) {
     my $s = $SERVICES[$i];
     my ($slug,$title,$blurb,$img) = ($s->{slug}, t($s->{t}), t($s->{d}), $s->{img});
+    my $pb = $slug eq 'pool-build';   # the only page carrying the price list
     my $prev = $i > 0          ? ["service-$SERVICES[$i-1]{slug}.html", t($SERVICES[$i-1]{t})] : undef;
     my $next = $i < $#SERVICES ? ["service-$SERVICES[$i+1]{slug}.html", t($SERVICES[$i+1]{t})] : undef;
     my $extra = ($slug eq 'steam-rooms')
@@ -1023,6 +1060,7 @@ HTML
     my $body = phero($title, $blurb, $img, [[t($NAV[2][1]),'services.html'],[$title]],
                      [map { t($_) } @{ $SVC_FEATURES{$slug} }])
     . subnav([['overview',t($T{jump_overview})],['included',t($T{jump_included})],
+              ($slug eq 'pool-build' ? ['prices',t($T{jump_prices})] : ()),
               ['work',t($T{jump_work})],['projects',t($T{jump_projects})],['contact',t($T{jump_contact})]])
     . <<"HTML";
 <section class="section" id="overview">
@@ -1058,8 +1096,8 @@ HTML
     @{[feats($SVC_FEATURES{$slug})]}
   </div>
 </section>
-
-<section class="section" id="work">
+@{[ $pb ? price_section() : '' ]}
+<section class="section@{[ $pb ? ' band' : '' ]}" id="work">
   <div class="wrap">
     <div class="sec-head"><div class="t" data-rv>
       <span class="eyebrow">/ ON SITE</span>
@@ -1070,7 +1108,7 @@ HTML
   </div>
 </section>
 
-<section class="section band" id="projects">
+<section class="section@{[ $pb ? '' : ' band' ]}" id="projects">
   <div class="wrap">
     <div class="sec-head"><div class="t" data-rv>
       <span class="eyebrow">/ PROJECTS</span>
@@ -1088,11 +1126,49 @@ HTML
 
   # ---------------------------------------------------------- PROJECTS
   {
+  # one chip per sector, each carrying how many projects sit in it
+  my %scount;
+  $scount{$_->{sec}}++ for @PROJECTS;
+  my $chips = qq{<button class="chip on" data-filter="all" aria-pressed="true">@{[t($T{filter_all})]}<span class="c">@{[scalar @PROJECTS]}</span></button>};
+  $chips .= qq{<button class="chip" data-filter="$_" aria-pressed="false">@{[t($SECTOR{$_})]}<span class="c">@{[$scount{$_} || 0]}</span></button>} for @SECTORS;
+
   my $body = phero(t($NAV[3][1]), t($T{projects_lead}), 'aquamarine25(1).jpg', [[t($NAV[3][1])]],
-                   [ar() ? 'فنادق ومنتجعات' : 'Hotels & resorts', ar() ? 'مدارس وأندية' : 'Schools & clubs', ar() ? 'صناعي' : 'Industrial'])
+                   [map { t($SECTOR{$_}) } @SECTORS])
+  . subnav([['projects',t($NAV[3][1])],['photos',t($T{gallery_h})],['video',t($T{video_page_h})]])
   . <<"HTML";
 <section class="section">
-  <div class="wrap">@{[proj_cards(undef,1)]}</div>
+  <div class="wrap">
+    <div class="chips" data-for="#projects" data-rv>$chips</div>
+    @{[proj_cards(undef,1,'projects')]}
+  </div>
+</section>
+
+<section class="section band" id="photos">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="t" data-rv>
+        <span class="eyebrow">/ GALLERY</span>
+        <h2 class="h2" style="margin-top:1rem">@{[t($T{gallery_h})]}</h2>
+        <p class="lead" style="margin-top:.7rem">@{[t($T{gallery_lead})]}</p>
+      </div>
+      <a class="btn btn-ghost" href="gallery.html" data-rv>@{[t($T{all_photos})]} @{[ic(fwd(),'ic')]}</a>
+    </div>
+    @{[gal_html(8)]}
+  </div>
+</section>
+
+<section class="section" id="video">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="t" data-rv>
+        <span class="eyebrow">/ VIDEO</span>
+        <h2 class="h2" style="margin-top:1rem">@{[t($T{video_page_h})]}</h2>
+        <p class="lead" style="margin-top:.7rem">@{[t($T{video_page_lead})]}</p>
+      </div>
+      <a class="btn btn-ghost" href="videos.html" data-rv>@{[t($T{all_videos})]} @{[ic(fwd(),'ic')]}</a>
+    </div>
+    @{[video_html()]}
+  </div>
 </section>
 
 @{[imgband('aquamarine23(1).jpg', t($T{full_record}), t($T{full_record_p}), 'works.html', t($T{browse_list}))]}
@@ -1224,8 +1300,8 @@ HTML
       <h2 class="h2" style="margin-top:1rem">@{[t($T{works_h})]}</h2>
       <p class="lead" style="margin-top:.7rem">@{[t($T{works_lead})]}</p>
     </div></div>
-    <div class="chips" data-rv>$chips</div>
-    <div class="ledger" data-rv>$rows</div>
+    <div class="chips" data-for="#ledger" data-rv>$chips</div>
+    <div class="ledger" id="ledger" data-rv>$rows</div>
   </div>
 </section>
 
@@ -1247,7 +1323,7 @@ HTML
   . qq{<p class="lead" style="margin-top:.7rem">@{[t($T{gallery_note})]}</p></div></div>}
   . album_shelf() . gal_html() . q{</div></section>}
   . cta_band();
-  page('gallery.html', t($T{gallery_h}) . " — $co", t($T{meta_gallery}), 'gallery.html', $body); $n++;
+  page('gallery.html', t($T{gallery_h}) . " — $co", t($T{meta_gallery}), 'projects.html', $body); $n++;
   }
 
   # ---------------------------------------------------------- VIDEOS
@@ -1293,7 +1369,7 @@ HTML
 
 @{[cta_band()]}
 HTML
-  page('videos.html', t($T{video_page_h}) . " — $co", t($T{meta_videos}), 'videos.html', $body); $n++;
+  page('videos.html', t($T{video_page_h}) . " — $co", t($T{meta_videos}), 'projects.html', $body); $n++;
   }
 
   # ---------------------------------------------------------- CONTACT
@@ -1307,7 +1383,6 @@ HTML
       <div class="ccard" data-rv><span class="ico">@{[ic('pin')]}</span><h3>@{[t($T{address_label})]}</h3><p>@{[t($C{addr})]}</p></div>
       <div class="ccard" data-rv data-delay="0.09"><span class="ico">@{[ic('phone')]}</span><h3>@{[t($T{phone_label})]}</h3>
         <a class="tnum" href="tel:$C{mobile}">$C{mobile}</a>
-        <a class="tnum" href="tel:$C{mobile2}">$C{mobile2}</a>
         <a class="tnum" href="tel:$C{land}">$C{land}</a>
         <a class="tnum" href="tel:$C{intl}">+$C{intl}</a>
       </div>
@@ -1376,7 +1451,6 @@ HTML
               <select id="o-service" name="service" required><option value="">@{[t($T{f_service_ph})]}</option>$opts</select>
               <span class="err">@{[t($T{f_service_err})]}</span></div>
             <div class="field full"><label for="o-msg">@{[t($T{f_details})]} <i>*</i></label><textarea id="o-msg" name="message" placeholder="@{[t($T{f_details_ph})]}" required></textarea><span class="err">@{[t($T{f_details_err})]}</span></div>
-            @{[captcha()]}
           </div>
           <button class="btn btn-accent btn-lg" type="submit" style="margin-top:1.5rem">@{[ic('send','ic')]} @{[t($T{order_btn})]}</button>
           @{[form_note()]}
