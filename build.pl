@@ -460,7 +460,10 @@ sub proj_cards {
 
 # pool price list: sizes across the head, pool types down the side.
 # Prices stay in Western digits in both languages, the way they are quoted.
+# $band tints the section (the home page needs it between two white ones);
+# $more adds a link on to the full service page, for pages that aren't it.
 sub price_section {
+  my ($band,$more) = @_;
   my $u  = t($POOL_PRICES{unit});
   my $th = qq{<th scope="col">@{[t($T{prices_type})]}</th>};
   $th .= qq{<th scope="col">$_ $u</th>} for @{ $POOL_PRICES{sizes} };
@@ -473,14 +476,17 @@ sub price_section {
     }
     $tb .= '</tr>';
   }
+  my $cta = $more
+    ? qq{<a class="btn btn-ghost" href="service-pool-build.html" data-rv>@{[t($T{service_details})]} @{[ic(fwd(),'ic')]}</a>}
+    : qq{<a class="btn btn-accent" href="order.html" data-rv>@{[t($T{order_service})]} @{[ic(fwd(),'ic')]}</a>};
   return <<"HTML";
-<section class="section" id="prices">
+<section class="section@{[ $band ? ' band' : '' ]}" id="prices">
   <div class="wrap">
     <div class="sec-head"><div class="t" data-rv>
       <span class="eyebrow">/ PRICING</span>
       <h2 class="h2" style="margin-top:1rem">@{[t($T{prices_h})]}</h2>
       <p class="lead" style="margin-top:.7rem">@{[t($T{prices_lead})]}</p>
-    </div><a class="btn btn-accent" href="order.html" data-rv>@{[t($T{order_service})]} @{[ic(fwd(),'ic')]}</a></div>
+    </div>$cta</div>
     <div class="ptable-wrap" data-rv><table class="ptable">
       <thead><tr>$th</tr></thead>
       <tbody>$tb</tbody>
@@ -883,6 +889,7 @@ sub build_all {
   </div>
 </section>
 
+@{[price_section(1,1)]}
 <section class="nums">
   $waves
   <div class="wrap">
