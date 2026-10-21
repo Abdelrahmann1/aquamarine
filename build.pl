@@ -1308,7 +1308,7 @@ HTML
 @{[imgband('aquamarine10(1).jpg', t($T{band_h}), t($T{band_lead}), 'projects.html', t($T{all_projects}))]}
 @{[cta_band()]}
 HTML
-  page('works.html', t($NAV[4][1]) . " — $co", t($T{meta_works}), 'works.html', $body); $n++;
+  page('works.html', t($NAV[4][1]) . " — $co", t($T{meta_works}), 'projects.html', $body); $n++;
   }
 
   # ---------------------------------------------------------- GALLERY
