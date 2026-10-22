@@ -330,7 +330,7 @@ push @GALLERY, qw(
 # ------------------------------------------------------------
 %T = (
   # global
-  order_now      => ['اطلب الآن','Request a quote'],
+  order_now      => ['اطلب الآن','Get a quote'],
   menu           => ['القائمة','Menu'],
   close          => ['إغلاق','Close'],
   home           => ['الرئيسية','Home'],
