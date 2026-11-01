@@ -479,7 +479,8 @@ sub proj_cards {
 # $more trades the order button for a link on to the full service page.
 sub price_section {
   my ($band,$more) = @_;
-  my $u = t($POOL_PRICES{unit});
+  my $u   = t($POOL_PRICES{unit});
+  my $cur = t($POOL_PRICES{cur});
   my $comma = sub { my $n = shift; 1 while $n =~ s/^(\d+)(\d{3})/$1,$2/; $n };
 
   # a tab per pool type; the open one shows its description and the four sizes
@@ -492,8 +493,9 @@ sub price_section {
     $tabs .= qq{<a href="#$id" role="tab" aria-selected="@{[ $on ? 'true' : 'false' ]}"@{[ $on ? ' class="on"' : '' ]}>@{[t($r->{t})]}</a>};
     my $tiles = '';
     for my $k (0 .. $#{ $POOL_PRICES{sizes} }) {
+      # the amount runs LTR in both languages, with the currency beside it
       $tiles .= qq{<div class="ptile"><span class="s">$POOL_PRICES{sizes}[$k] $u</span>}
-              . qq{<b class="p tnum">@{[ $comma->($r->{p}[$k]) ]}</b></div>};
+              . qq{<b class="p"><span class="tnum">@{[ $comma->($r->{p}[$k]) ]}</span><i>$cur</i></b></div>};
     }
     $panes .= qq{<div class="ppanel" id="$id" role="tabpanel"><p>@{[t($r->{d})]}</p>}
             . qq{<div class="ptiles">$tiles</div></div>};
