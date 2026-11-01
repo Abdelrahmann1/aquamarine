@@ -299,7 +299,12 @@ sub phero {
   my $l = $lead ? qq{<p class="lead">$lead</p>} : '';
   my $tg = '';
   if ($tags && @$tags) {
-    $tg = '<div class="phero-tags">' . join('', map { "<span>$_</span>" } @$tags) . '</div>';
+    # a plain string is a label; [label, filter] is a button that picks that filter
+    $tg = '<div class="phero-tags">' . join('', map {
+      ref $_ eq 'ARRAY'
+        ? qq{<button type="button" class="ptag" data-pick="$_->[1]">$_->[0]</button>}
+        : "<span>$_</span>"
+    } @$tags) . '</div>';
   }
   return qq{<section class="phero grain"><div class="bgi" style="background-image:url('${A}assets/img/$img')"></div>}
        . qq{<div class="wrap">$c<h1 class="h1">$title</h1>$l$tg</div></section>};
@@ -477,21 +482,25 @@ sub price_section {
   my $u = t($POOL_PRICES{unit});
   my $comma = sub { my $n = shift; 1 while $n =~ s/^(\d+)(\d{3})/$1,$2/; $n };
 
-  my $cards = '<div class="pcards">';
+  # a tab per pool type; the open one shows its description and the four sizes
+  my $tabs = '<div class="ptabs" data-tabs role="tablist" data-rv>';
+  my $panes = '';
   my $i = 0;
   for my $r (@{ $POOL_PRICES{rows} }) {
-    my $d = sprintf('%.2f', $i * 0.08);
-    my $rows = '';
+    (my $id = 'pool-' . lc $r->{t}[1]) =~ s/[^a-z0-9]+/-/g;
+    my $on = $i == 0;
+    $tabs .= qq{<a href="#$id" role="tab" aria-selected="@{[ $on ? 'true' : 'false' ]}"@{[ $on ? ' class="on"' : '' ]}>@{[t($r->{t})]}</a>};
+    my $tiles = '';
     for my $k (0 .. $#{ $POOL_PRICES{sizes} }) {
-      $rows .= qq{<li><span class="s">$POOL_PRICES{sizes}[$k] $u</span>}
-             . qq{<b class="p tnum">@{[ $comma->($r->{p}[$k]) ]}</b></li>};
+      $tiles .= qq{<div class="ptile"><span class="s">$POOL_PRICES{sizes}[$k] $u</span>}
+              . qq{<b class="p tnum">@{[ $comma->($r->{p}[$k]) ]}</b></div>};
     }
-    $cards .= qq{<article class="pcard" data-rv data-delay="$d">}
-            . qq{<h3>@{[t($r->{t})]}</h3><p>@{[t($r->{d})]}</p>}
-            . qq{<ul>$rows</ul></article>};
+    $panes .= qq{<div class="ppanel" id="$id" role="tabpanel"><p>@{[t($r->{d})]}</p>}
+            . qq{<div class="ptiles">$tiles</div></div>};
     $i++;
   }
-  $cards .= '</div>';
+  $tabs .= '</div>';
+  my $cards = qq{$tabs<div class="ppanels" data-rv>$panes</div>};
 
   # the finishing schedule the prices cover, under the cards on both pages
   my $items = '';
@@ -1162,7 +1171,7 @@ HTML
   $chips .= qq{<button class="chip" data-filter="$_" aria-pressed="false">@{[t($SECTOR{$_})]}<span class="c">@{[$scount{$_} || 0]}</span></button>} for @SECTORS;
 
   my $body = phero(t($NAV[3][1]), t($T{projects_lead}), 'aquamarine25(1).jpg', [[t($NAV[3][1])]],
-                   [map { t($SECTOR{$_}) } @SECTORS])
+                   [map { [t($SECTOR{$_}), $_] } @SECTORS])
   . subnav([['projects',t($NAV[3][1])],['photos',t($T{gallery_h})],['video',t($T{video_page_h})]], 1)
   . <<"HTML";
 <section class="section" id="projects">

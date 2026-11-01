@@ -664,32 +664,46 @@
    POOL PRICES — a card per pool type, the sizes priced inside it.
    Reads top-to-bottom on a phone, so nothing has to scroll sideways.
    ============================================================ */
-.pcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(265px,1fr));gap:clamp(14px,1.8vw,22px)}
-.pcard{
-  display:flex;flex-direction:column;margin:0;
+/* a segmented control: pick the pool type, its panel replaces the one below */
+.ptabs{
+  display:inline-flex;flex-wrap:wrap;gap:4px;padding:5px;border-radius:16px;
+  background:rgba(37,48,107,.06);margin-bottom:clamp(16px,2vw,24px);
+}
+.band .ptabs{background:rgba(37,48,107,.09)}
+.ptabs a{
+  padding:.62em 1.3em;border-radius:12px;cursor:pointer;white-space:nowrap;
+  font-size:.93rem;font-weight:600;color:var(--ink-2);
+  transition:background .3s var(--ease),color .3s var(--ease),box-shadow .3s var(--ease);
+}
+.ptabs a:hover{color:var(--navy)}
+.ptabs a.on{background:#fff;color:var(--navy);box-shadow:0 4px 12px -4px rgba(20,28,70,.3),0 0 0 1px rgba(37,48,107,.06)}
+.ptabs a:focus-visible{outline:2px solid var(--b-bright);outline-offset:2px}
+
+.ppanel{
   background:var(--card);border:1px solid var(--line);border-radius:var(--rad-lg);
-  padding:clamp(22px,2.4vw,30px);position:relative;overflow:hidden;
-  transition:transform .45s var(--ease-out),box-shadow .45s var(--ease),border-color .4s var(--ease);
+  padding:clamp(22px,2.6vw,32px);
 }
-.pcard::before{
-  content:"";position:absolute;inset-inline:0;top:0;height:3px;
-  background:linear-gradient(90deg,var(--b-blue),var(--b-sky));
-  transform:scaleX(0);transform-origin:right;transition:transform .5s var(--ease-out);
+.band .ppanel{border-color:var(--line-2)}
+.ppanel > p{font-size:.96rem;line-height:1.9;color:var(--ink-3);margin:0 0 clamp(18px,2.2vw,28px);max-width:72ch}
+.ptiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:clamp(10px,1.3vw,16px)}
+.ptile{
+  border:1px solid var(--line);border-radius:var(--rad);background:var(--paper-2);
+  padding:clamp(14px,1.7vw,20px);
+  transition:border-color .35s var(--ease),background .35s var(--ease),transform .4s var(--ease-out);
 }
-[dir="ltr"] .pcard::before{transform-origin:left}
-.pcard:hover{transform:translateY(-5px);box-shadow:var(--shadow-l);border-color:transparent}
-.pcard:hover::before{transform:scaleX(1)}
-.pcard h3{font-size:1.18rem;color:var(--navy);margin-bottom:.5em}
-.pcard > p{font-size:.88rem;line-height:1.8;color:var(--ink-3);margin:0 0 1.3em}
-.pcard ul{list-style:none;margin:0;padding:0;display:grid;border-top:1px solid var(--line)}
-.pcard li{
-  display:flex;align-items:baseline;justify-content:space-between;gap:1em;
-  padding:.72em 0;border-bottom:1px solid var(--line);
+.ptile:hover{border-color:var(--b-sky);background:var(--card);transform:translateY(-3px)}
+.ptile .s{display:block;font-size:.83rem;color:var(--ink-3);margin-bottom:.5em}
+.ptile .p{display:block;font-size:clamp(1.05rem,1.9vw,1.32rem);font-weight:600;color:var(--navy);line-height:1.2}
+
+/* hero tags that drop you into the matching project filter */
+.phero-tags .ptag{
+  font:inherit;font-family:var(--f-ar);font-size:.8rem;cursor:pointer;
+  padding:.44em 1em;border-radius:99px;
+  background:rgba(234,243,245,.09);border:1px solid var(--line-dark);color:var(--foam);
+  transition:background .3s var(--ease),border-color .3s var(--ease),color .3s var(--ease);
 }
-.pcard li .s{font-size:.88rem;color:var(--ink-2);white-space:nowrap}
-.pcard li .p{font-size:1rem;font-weight:600;color:var(--ink);white-space:nowrap}
-.pcard:hover li .p{color:var(--b-blue)}
-.band .pcard{border-color:var(--line-2)}
+.phero-tags .ptag:hover{background:var(--aqua);border-color:var(--aqua);color:#fff}
+.phero-tags .ptag:focus-visible{outline:2px solid var(--aqua-l);outline-offset:2px}
 
 /* finishing schedule: label on one side, material on the other */
 .spec-wrap{margin-top:clamp(30px,3.6vw,46px)}

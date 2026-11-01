@@ -164,33 +164,54 @@
     else if (wide.addListener) wide.addListener(onWide);
   }
 
-  /* ---------- tabbed sections (the projects page) ----------
-     The bar is plain anchors in the markup, so it still works without JS.
-     Here it becomes tabs: one panel at a time, the hash naming the open one.
-     Hidden panels never load their images, which keeps the page light. */
-  var tabBar = $('.subnav[data-tabs]');
-  if (tabBar) {
-    var tabs = $$('a[href^="#"]', tabBar);
+  /* ---------- tab bars ----------
+     Every bar is plain anchors in the markup, so each still works without JS
+     as a jump link. Here each becomes tabs: one panel at a time. A bar marked
+     data-hash also writes the open panel into the URL, so it can be linked to.
+     Panels that are closed never load their images, keeping the page light. */
+  $$('[data-tabs]').forEach(function (bar) {
+    var tabs = $$('a[href^="#"]', bar);
     var panels = tabs.map(function (a) { return $(a.getAttribute('href')); });
+    if (tabs.length < 2 || panels.indexOf(null) !== -1) return;
+    var useHash = bar.hasAttribute('data-hash');
     var openTab = function (i, jump) {
       tabs.forEach(function (a, k) {
         a.classList.toggle('on', k === i);
         a.setAttribute('aria-selected', k === i ? 'true' : 'false');
       });
-      panels.forEach(function (p, k) { if (p) p.hidden = k !== i; });
-      if (!jump) return;
+      panels.forEach(function (p, k) { p.hidden = k !== i; });
+      if (!jump || !useHash) return;
       history.replaceState(null, '', tabs[i].getAttribute('href'));
       // bring the bar to the top of the screen, clear of the floating header
-      var y = tabBar.getBoundingClientRect().top + window.pageYOffset - 86;
+      var y = bar.getBoundingClientRect().top + window.pageYOffset - 86;
       if (window.pageYOffset > y) window.scrollTo({ top: y, behavior: reduced ? 'auto' : 'smooth' });
     };
     tabs.forEach(function (a, i) {
       a.addEventListener('click', function (e) { e.preventDefault(); openTab(i, true); });
     });
     var wanted = 0;
-    tabs.forEach(function (a, i) { if (a.getAttribute('href') === location.hash) wanted = i; });
+    if (useHash) tabs.forEach(function (a, i) { if (a.getAttribute('href') === location.hash) wanted = i; });
     openTab(wanted, false);
-  }
+  });
+
+  /* ---------- hero tags that drop you into the matching filter ---------- */
+  $$('.ptag[data-pick]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var chip = $('.chip[data-filter="' + btn.getAttribute('data-pick') + '"]');
+      if (!chip) return;
+      // the chips live in the first tab, so open that before picking one
+      var firstTab = $('[data-tabs] a[href^="#"]');
+      if (firstTab && !firstTab.classList.contains('on')) firstTab.click();
+      chip.click();
+      var bar = chip.closest('.chips');
+      if (bar) {
+        window.scrollTo({
+          top: bar.getBoundingClientRect().top + window.pageYOffset - 150,
+          behavior: reduced ? 'auto' : 'smooth'
+        });
+      }
+    });
+  });
 
   /* ---------- reveal on scroll ---------- */
   var rv = $$('[data-rv]');
