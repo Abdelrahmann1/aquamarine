@@ -481,7 +481,6 @@
   border:1px solid var(--line);border-radius:99px;padding:.3em .8em;
   align-self:center;background:var(--paper-2);
 }
-.lrow[hidden]{display:none}
 
 /* ============================================================
    GALLERY
@@ -798,7 +797,6 @@
 .album.on .nm{color:var(--aqua-d)}
 .album-all .cv{display:grid;place-items:center;background:linear-gradient(140deg,var(--dark-3),var(--dark))}
 .album-all .cv b{font-size:clamp(1.6rem,2.6vw,2.2rem);font-weight:600;color:var(--aqua-l);letter-spacing:-.02em}
-.gal figure[hidden],.strip figure[hidden]{display:none}
 .lb-cap{flex:1;margin-inline:16px;font-size:.88rem;color:#fff;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* ============================================================
