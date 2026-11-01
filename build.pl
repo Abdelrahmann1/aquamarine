@@ -471,12 +471,10 @@ sub proj_cards {
 # pool prices: one card per pool type, the four sizes listed inside it.
 # Prices stay in Western digits in both languages, the way they are quoted.
 # $band tints the section (the home page needs it between two white ones);
-# $more trades the order button for a link on to the full service page, and
-# drops the finishing schedule — that belongs on the service page itself.
+# $more trades the order button for a link on to the full service page.
 sub price_section {
   my ($band,$more) = @_;
-  my $u   = t($POOL_PRICES{unit});
-  my $cur = t($POOL_PRICES{cur});
+  my $u = t($POOL_PRICES{unit});
   my $comma = sub { my $n = shift; 1 while $n =~ s/^(\d+)(\d{3})/$1,$2/; $n };
 
   my $cards = '<div class="pcards">';
@@ -495,15 +493,12 @@ sub price_section {
   }
   $cards .= '</div>';
 
-  # the finishing schedule, on the service page only
-  my $spec = '';
-  unless ($more) {
-    my $items = '';
-    $items .= qq{<div><dt>@{[t($_->{t})]}</dt><dd>@{[t($_->{d})]}</dd></div>} for @POOL_SPEC;
-    $spec = qq{<div class="spec-wrap" data-rv><h3 class="h3">@{[t($T{spec_h})]}</h3>}
-          . qq{<p class="muted" style="margin:.4em 0 1.2rem;font-size:.92rem">@{[t($T{spec_lead})]}</p>}
-          . qq{<dl class="spec">$items</dl></div>};
-  }
+  # the finishing schedule the prices cover, under the cards on both pages
+  my $items = '';
+  $items .= qq{<div><dt>@{[t($_->{t})]}</dt><dd>@{[t($_->{d})]}</dd></div>} for @POOL_SPEC;
+  my $spec = qq{<div class="spec-wrap" data-rv><h3 class="h3">@{[t($T{spec_h})]}</h3>}
+           . qq{<p class="muted" style="margin:.4em 0 1.2rem;font-size:.92rem">@{[t($T{spec_lead})]}</p>}
+           . qq{<dl class="spec">$items</dl></div>};
 
   my $cta = $more
     ? qq{<a class="btn btn-ghost" href="service-pool-build.html" data-rv>@{[t($T{service_details})]} @{[ic(fwd(),'ic')]}</a>}
