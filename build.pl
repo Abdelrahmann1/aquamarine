@@ -1468,7 +1468,14 @@ HTML
 
   # ---------------------------------------------------------- ORDER
   {
-  my $opts = join '', map { my $v = t($_->{t}); qq{<option value="$v">$v</option>} } @SERVICES;
+  # the two pool services carry a marker, so the form can offer type and size
+  my $opts = join '', map {
+    my $v = t($_->{t});
+    qq{<option value="$v"@{[ $_->{slug} =~ /^pool-/ ? ' data-pool="1"' : '' ]}>$v</option>}
+  } @SERVICES;
+  my $pu     = t($POOL_PRICES{unit});
+  my $ptypes = join '', map { my $v = t($_->{t}); qq{<option value="$v">$v</option>} } @{ $POOL_PRICES{rows} };
+  my $psizes = join '', map { qq{<option value="$_ $pu">$_ $pu</option>} } @{ $POOL_PRICES{sizes} };
   my $body = phero(t($T{order_now}), t($T{order_lead}), 'aquamarine26(1).jpg', [[t($T{order_now})]],
                    [ar() ? 'رد خلال 24 ساعة' : 'Reply within 24 hours', ar() ? 'عرض سعر مجاني' : 'Free quotation'])
   . <<"HTML";
@@ -1488,6 +1495,10 @@ HTML
             <div class="field full"><label for="o-service">@{[t($T{f_service})]} <i>*</i></label>
               <select id="o-service" name="service" required><option value="">@{[t($T{f_service_ph})]}</option>$opts</select>
               <span class="err">@{[t($T{f_service_err})]}</span></div>
+            <div class="field pool-only" hidden><label for="o-ptype">@{[t($T{f_pool_type})]}</label>
+              <select id="o-ptype" name="pool_type"><option value="">@{[t($T{f_choose})]}</option>$ptypes</select></div>
+            <div class="field pool-only" hidden><label for="o-psize">@{[t($T{f_pool_size})]}</label>
+              <select id="o-psize" name="pool_size"><option value="">@{[t($T{f_choose})]}</option>$psizes</select></div>
             <div class="field full"><label for="o-msg">@{[t($T{f_details})]} <i>*</i></label><textarea id="o-msg" name="message" placeholder="@{[t($T{f_details_ph})]}" required></textarea><span class="err">@{[t($T{f_details_err})]}</span></div>
           </div>
           <button class="btn btn-accent btn-lg" type="submit" style="margin-top:1.5rem">@{[ic('send','ic')]} @{[t($T{order_btn})]}</button>

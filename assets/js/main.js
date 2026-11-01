@@ -451,6 +451,24 @@
     }
   }
 
+  /* ---------- order form: pool type and size, for the pool services ---------- */
+  var svcSelect = $('select[name="service"]');
+  if (svcSelect) {
+    var poolFields = $$('.pool-only');
+    var syncPool = function () {
+      var opt = svcSelect.options[svcSelect.selectedIndex];
+      var wanted = !!(opt && opt.hasAttribute('data-pool'));
+      poolFields.forEach(function (f) {
+        f.hidden = !wanted;
+        // a hidden answer must not ride along with the enquiry
+        var sel = $('select', f);
+        if (sel && !wanted) sel.value = '';
+      });
+    };
+    svcSelect.addEventListener('change', syncPool);
+    syncPool();
+  }
+
   /* ---------- forms: math check + validation ---------- */
   $$('form[data-validate]').forEach(function (form) {
     var a, b;
@@ -496,6 +514,8 @@
         get('phone') ? 'الموبايل: ' + get('phone') : '',
         get('email') ? 'الإيميل: ' + get('email') : '',
         get('service') ? 'الخدمة: ' + get('service') : '',
+        get('pool_type') ? 'نوع الحمام: ' + get('pool_type') : '',
+        get('pool_size') ? 'المقاس: ' + get('pool_size') : '',
         get('city') ? 'المحافظة: ' + get('city') : '',
         get('message') ? '\n' + get('message') : ''
       ].filter(Boolean);
