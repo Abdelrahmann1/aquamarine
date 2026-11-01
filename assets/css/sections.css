@@ -147,6 +147,13 @@
 .subnav a:hover{color:var(--aqua-d)}
 .subnav a:hover::after{transform:scaleY(1)}
 
+/* the tabbed variant: the open tab keeps its underline and stays on phones */
+.subnav.tabs ul{gap:clamp(10px,2vw,26px)}
+.subnav.tabs a{cursor:pointer;font-size:.92rem;font-weight:600;color:var(--ink-3)}
+.subnav.tabs a.on{color:var(--navy)}
+.subnav.tabs a.on::after{transform:scaleY(1);background:var(--navy);height:2.5px}
+.subnav.tabs a:focus-visible{outline:2px solid var(--b-bright);outline-offset:-4px;border-radius:6px}
+
 /* ============================================================
    PROSE
    ============================================================ */
@@ -655,24 +662,49 @@
 .form-msg svg{width:17px;height:17px;flex:none;margin-top:.3em}
 
 /* ============================================================
-   PRICE TABLE — sizes across the head, pool types down the side.
-   Too wide for a phone, so it scrolls inside its own frame.
+   POOL PRICES — a card per pool type, the sizes priced inside it.
+   Reads top-to-bottom on a phone, so nothing has to scroll sideways.
    ============================================================ */
-.ptable-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:var(--rad-lg);background:var(--card);box-shadow:var(--shadow-s)}
-.ptable{width:100%;min-width:540px;border-collapse:collapse}
-.ptable th,.ptable td{padding:clamp(13px,1.6vw,19px) clamp(12px,1.6vw,20px);text-align:start;border-bottom:1px solid var(--line);white-space:nowrap}
-.ptable thead th{
-  background:var(--paper-2);border-bottom-color:var(--line-2);
-  font-size:.83rem;font-weight:600;color:var(--ink-2);
+.pcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(265px,1fr));gap:clamp(14px,1.8vw,22px)}
+.pcard{
+  display:flex;flex-direction:column;margin:0;
+  background:var(--card);border:1px solid var(--line);border-radius:var(--rad-lg);
+  padding:clamp(22px,2.4vw,30px);position:relative;overflow:hidden;
+  transition:transform .45s var(--ease-out),box-shadow .45s var(--ease),border-color .4s var(--ease);
 }
-.ptable tbody th{font-size:.97rem;font-weight:600;color:var(--ink)}
-.ptable tbody td{font-size:.95rem;color:var(--ink-2)}
-.ptable tbody tr{transition:background .3s var(--ease)}
-.ptable tbody tr:hover{background:var(--paper-2)}
-.ptable tbody tr:hover td{color:var(--ink)}
-.ptable tbody tr:last-child th,.ptable tbody tr:last-child td{border-bottom:0}
-/* prices read left-to-right in both languages, hugging the column's start edge */
-[dir="rtl"] .ptable td.tnum{text-align:right}
+.pcard::before{
+  content:"";position:absolute;inset-inline:0;top:0;height:3px;
+  background:linear-gradient(90deg,var(--b-blue),var(--b-sky));
+  transform:scaleX(0);transform-origin:right;transition:transform .5s var(--ease-out);
+}
+[dir="ltr"] .pcard::before{transform-origin:left}
+.pcard:hover{transform:translateY(-5px);box-shadow:var(--shadow-l);border-color:transparent}
+.pcard:hover::before{transform:scaleX(1)}
+.pcard h3{font-size:1.18rem;color:var(--navy);margin-bottom:.5em}
+.pcard > p{font-size:.88rem;line-height:1.8;color:var(--ink-3);margin:0 0 1.3em}
+.pcard ul{list-style:none;margin:0;padding:0;display:grid;border-top:1px solid var(--line)}
+.pcard li{
+  display:flex;align-items:baseline;justify-content:space-between;gap:1em;
+  padding:.72em 0;border-bottom:1px solid var(--line);
+}
+.pcard li .s{font-size:.88rem;color:var(--ink-2);white-space:nowrap}
+.pcard li .p{font-size:1rem;font-weight:600;color:var(--ink);white-space:nowrap}
+.pcard:hover li .p{color:var(--b-blue)}
+.band .pcard{border-color:var(--line-2)}
+
+/* finishing schedule: label on one side, material on the other */
+.spec-wrap{margin-top:clamp(30px,3.6vw,46px)}
+.spec-wrap .h3{font-size:clamp(1.1rem,1.7vw,1.3rem)}
+.spec{display:grid;gap:1px;margin:0;background:var(--line);border:1px solid var(--line);border-radius:var(--rad-lg);overflow:hidden}
+.spec > div{
+  display:grid;grid-template-columns:minmax(145px,.42fr) 1fr;gap:clamp(10px,2vw,26px);
+  background:var(--card);padding:clamp(13px,1.6vw,18px) clamp(14px,1.8vw,22px);align-items:baseline;
+  transition:background .3s var(--ease);
+}
+.spec > div:hover{background:var(--paper-2)}
+.spec dt{font-size:.89rem;font-weight:600;color:var(--ink)}
+.spec dd{margin:0;font-size:.93rem;line-height:1.75;color:var(--ink-2)}
+@media (max-width:560px){.spec > div{grid-template-columns:1fr;gap:.3em}}
 
 /* ============================================================
    MISC
@@ -722,7 +754,7 @@
   .gal{columns:2}
   .lrow{grid-template-columns:42px 1fr;gap:12px}
   .lrow .k{grid-column:2;justify-self:start;margin-top:.5em}
-  .subnav{display:none}
+  .subnav:not(.tabs){display:none}
 }
 @media (max-width:640px){
   .svc-grid,.proj-grid,.feats{grid-template-columns:1fr}

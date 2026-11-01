@@ -15,7 +15,7 @@ binmode(STDOUT, ':encoding(UTF-8)');
 our (%C, @SERVICES, @PROJECTS, @WORKS, @GALLERY, @FULLSERVICES,
      %T, %CATNAME, @NAV, @PROCESS, @LOCATIONS,
      %SVC_FEATURES, %PROJ_FACTS, %PROJ_WORKS, @GENERIC_SCOPE,
-     @SECTORS, %SECTOR, %POOL_PRICES);
+     @SECTORS, %SECTOR, %POOL_PRICES, @POOL_SPEC);
 
 do './content.pl' or die "content.pl: " . ($@ || $!);
 
@@ -305,10 +305,20 @@ sub phero {
        . qq{<div class="wrap">$c<h1 class="h1">$title</h1>$l$tg</div></section>};
 }
 
+# In-page jump links. With $tabs the same bar becomes real tabs: main.js shows
+# one panel at a time, and it stays on screen on a phone (the plain bar hides).
 sub subnav {
-  my ($items) = @_;
-  my $o = '<nav class="subnav"><div class="wrap"><ul>';
-  $o .= qq{<li><a href="#$_->[0]">$_->[1]</a></li>} for @$items;
+  my ($items,$tabs) = @_;
+  my $o = $tabs ? '<nav class="subnav tabs" data-tabs role="tablist"><div class="wrap"><ul>'
+                : '<nav class="subnav"><div class="wrap"><ul>';
+  my $first = 1;
+  for my $it (@$items) {
+    my $a = $tabs
+      ? qq{<a href="#$it->[0]" role="tab" aria-selected="@{[ $first ? 'true' : 'false' ]}"@{[ $first ? ' class="on"' : '' ]}>$it->[1]</a>}
+      : qq{<a href="#$it->[0]">$it->[1]</a>};
+    $o .= "<li>$a</li>";
+    $first = 0;
+  }
   return $o . '</ul></div></nav>';
 }
 
@@ -458,24 +468,43 @@ sub proj_cards {
   return $o . '</div>';
 }
 
-# pool price list: sizes across the head, pool types down the side.
+# pool prices: one card per pool type, the four sizes listed inside it.
 # Prices stay in Western digits in both languages, the way they are quoted.
 # $band tints the section (the home page needs it between two white ones);
-# $more adds a link on to the full service page, for pages that aren't it.
+# $more trades the order button for a link on to the full service page, and
+# drops the finishing schedule — that belongs on the service page itself.
 sub price_section {
   my ($band,$more) = @_;
-  my $u  = t($POOL_PRICES{unit});
-  my $th = qq{<th scope="col">@{[t($T{prices_type})]}</th>};
-  $th .= qq{<th scope="col">$_ $u</th>} for @{ $POOL_PRICES{sizes} };
-  my $tb = '';
+  my $u   = t($POOL_PRICES{unit});
+  my $cur = t($POOL_PRICES{cur});
+  my $comma = sub { my $n = shift; 1 while $n =~ s/^(\d+)(\d{3})/$1,$2/; $n };
+
+  my $cards = '<div class="pcards">';
+  my $i = 0;
   for my $r (@{ $POOL_PRICES{rows} }) {
-    $tb .= qq{<tr><th scope="row">@{[t($r->{t})]}</th>};
-    for my $p (@{ $r->{p} }) {
-      1 while $p =~ s/^(\d+)(\d{3})/$1,$2/;   # thousands separators
-      $tb .= qq{<td class="tnum">$p</td>};
+    my $d = sprintf('%.2f', $i * 0.08);
+    my $rows = '';
+    for my $k (0 .. $#{ $POOL_PRICES{sizes} }) {
+      $rows .= qq{<li><span class="s">$POOL_PRICES{sizes}[$k] $u</span>}
+             . qq{<b class="p tnum">@{[ $comma->($r->{p}[$k]) ]}</b></li>};
     }
-    $tb .= '</tr>';
+    $cards .= qq{<article class="pcard" data-rv data-delay="$d">}
+            . qq{<h3>@{[t($r->{t})]}</h3><p>@{[t($r->{d})]}</p>}
+            . qq{<ul>$rows</ul></article>};
+    $i++;
   }
+  $cards .= '</div>';
+
+  # the finishing schedule, on the service page only
+  my $spec = '';
+  unless ($more) {
+    my $items = '';
+    $items .= qq{<div><dt>@{[t($_->{t})]}</dt><dd>@{[t($_->{d})]}</dd></div>} for @POOL_SPEC;
+    $spec = qq{<div class="spec-wrap" data-rv><h3 class="h3">@{[t($T{spec_h})]}</h3>}
+          . qq{<p class="muted" style="margin:.4em 0 1.2rem;font-size:.92rem">@{[t($T{spec_lead})]}</p>}
+          . qq{<dl class="spec">$items</dl></div>};
+  }
+
   my $cta = $more
     ? qq{<a class="btn btn-ghost" href="service-pool-build.html" data-rv>@{[t($T{service_details})]} @{[ic(fwd(),'ic')]}</a>}
     : qq{<a class="btn btn-accent" href="order.html" data-rv>@{[t($T{order_service})]} @{[ic(fwd(),'ic')]}</a>};
@@ -487,11 +516,9 @@ sub price_section {
       <h2 class="h2" style="margin-top:1rem">@{[t($T{prices_h})]}</h2>
       <p class="lead" style="margin-top:.7rem">@{[t($T{prices_lead})]}</p>
     </div>$cta</div>
-    <div class="ptable-wrap" data-rv><table class="ptable">
-      <thead><tr>$th</tr></thead>
-      <tbody>$tb</tbody>
-    </table></div>
-    <div class="note" style="margin-top:1.4rem" data-rv>@{[ic('info')]} @{[t($T{prices_note})]}</div>
+    $cards
+    $spec
+    <div class="note" style="margin-top:1.5rem" data-rv>@{[ic('info')]} @{[t($T{prices_note})]}</div>
   </div>
 </section>
 HTML
@@ -1141,16 +1168,16 @@ HTML
 
   my $body = phero(t($NAV[3][1]), t($T{projects_lead}), 'aquamarine25(1).jpg', [[t($NAV[3][1])]],
                    [map { t($SECTOR{$_}) } @SECTORS])
-  . subnav([['projects',t($NAV[3][1])],['photos',t($T{gallery_h})],['video',t($T{video_page_h})]])
+  . subnav([['projects',t($NAV[3][1])],['photos',t($T{gallery_h})],['video',t($T{video_page_h})]], 1)
   . <<"HTML";
-<section class="section">
+<section class="section" id="projects">
   <div class="wrap">
-    <div class="chips" data-for="#projects" data-rv>$chips</div>
-    @{[proj_cards(undef,1,'projects')]}
+    <div class="chips" data-for="#proj-grid" data-rv>$chips</div>
+    @{[proj_cards(undef,1,'proj-grid')]}
   </div>
 </section>
 
-<section class="section band" id="photos">
+<section class="section" id="photos">
   <div class="wrap">
     <div class="sec-head">
       <div class="t" data-rv>

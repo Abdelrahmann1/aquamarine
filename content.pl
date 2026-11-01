@@ -120,12 +120,31 @@ our (%C, @SERVICES, @PROJECTS, @WORKS, @GALLERY, @FULLSERVICES,
 # ------------------------------------------------------------
 our %POOL_PRICES = (
   unit  => ['م','m'],
+  cur   => ['ج.م','EGP'],
   sizes => ['4 × 6', '5 × 7', '6 × 8', '6 × 10'],
   rows  => [
-    { t=>['سكيمر','Skimmer'],     p=>[ 961925, 1402900, 1923850, 2404812] },
-    { t=>['أوفر فلو','Overflow'], p=>[1570887, 2291028, 3135875, 3919843] },
-    { t=>['هورايزون','Horizon'],  p=>[1370461, 1998721, 2731867, 3414833] },
+    { t=>['سكيمر','Skimmer'],     p=>[ 961925, 1402900, 1923850, 2404812],
+      d=>['منسوب الماء أسفل حافة الحمام، والسحب من فتحات سكيمر في الجدار. الأكثر شيوعاً والأقل تكلفة.',
+          'The water sits below the coping and is drawn through skimmers set into the wall. The most common and the most economical.'] },
+    { t=>['أوفر فلو','Overflow'], p=>[1570887, 2291028, 3135875, 3919843],
+      d=>['منسوب الماء في مستوى الأرضية، يفيض في قناة محيطة إلى خزان توازن. مظهر أنظف وتنقية أفضل للسطح.',
+          'The water sits flush with the deck and spills into a perimeter channel feeding a balance tank. A cleaner look and better surface skimming.'] },
+    { t=>['هورايزون','Horizon'],  p=>[1370461, 1998721, 2731867, 3414833],
+      d=>['الماء يفيض من حافة أو أكثر فيبدو الحمام ملتقياً بالأفق. يحتاج خزان توازن وأعمالاً إنشائية إضافية.',
+          'The water spills over one or more edges so the pool appears to meet the horizon. Needs a balance tank and extra structural work.'] },
   ],
+);
+
+# finishing schedule quoted with the prices above
+our @POOL_SPEC = (
+  { t=>['تشطيب حمام السباحة','Pool coping'],
+    d=>['رخام تريستا — سمك 4 سم، عرض 45 سم، لون بيج','Triesta marble — 4 cm thick, 45 cm wide, beige'] },
+  { t=>['سيراميك حمام السباحة','Pool tiling'],
+    d=>['سيراميكا كليوباترا — مقاس 12 × 24 سم، لون لبني','Ceramica Cleopatra — 12 × 24 cm, light blue'] },
+  { t=>['سيراميك حوائط الغرف','Room wall tiling'],
+    d=>['سيراميكا كليوباترا — مقاس 30 × 60 سم، لون أبيض','Ceramica Cleopatra — 30 × 60 cm, white'] },
+  { t=>['سيراميك أرضيات الغرف','Room floor tiling'],
+    d=>['سورناجا — مقاس 30 × 30 سم','Sornaga — 30 × 30 cm'] },
 );
 
 # the four sectors the projects page filters by
@@ -353,6 +372,8 @@ push @GALLERY, qw(
   prices_lead    => ['أسعار استرشادية لحمام سباحة متكامل بعمق 1.20 متر، بالجنيه المصري.',
                      'Indicative prices for a complete pool 1.20 m deep, in Egyptian pounds.'],
   prices_type    => ['النوع','Type'],
+  spec_h         => ['توصيف التشطيب','Finishing schedule'],
+  spec_lead      => ['الخامات المسعَّرة أعلاه.','The materials covered by the prices above.'],
   prices_note    => ['السعر النهائي يتحدد بعد معاينة الموقع، ويختلف حسب المقاس والتشطيب والمعدات المطلوبة.',
                      'The final price follows a site survey, and varies with size, finish and the equipment specified.'],
   jump_prices    => ['الأسعار','Prices'],
