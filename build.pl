@@ -67,6 +67,9 @@ my %I = (
   yt      => '<path d="M22 12s0-3-.4-4.4a2.6 2.6 0 0 0-1.8-1.8C18.4 5.4 12 5.4 12 5.4s-6.4 0-7.8.4a2.6 2.6 0 0 0-1.8 1.8C2 9 2 12 2 12s0 3 .4 4.4a2.6 2.6 0 0 0 1.8 1.8c1.4.4 7.8.4 7.8.4s6.4 0 7.8-.4a2.6 2.6 0 0 0 1.8-1.8C22 15 22 12 22 12z"/><polygon points="10.2 15 15 12 10.2 9" fill="currentColor" stroke="none"/>',
   li      => '<rect x="3" y="3" width="18" height="18" rx="3"/><line x1="8" y1="11" x2="8" y2="16"/><circle cx="8" cy="7.8" r="1" fill="currentColor" stroke="none"/><path d="M12 16v-3a2 2 0 0 1 4 0v3"/><line x1="12" y1="11" x2="12" y2="16"/>',
 );
+# the company profile, in the language of the page
+sub profile_pdf { return $A . 'assets/doc/' . (ar() ? 'AQUAMARINE_PROFILE_AR.pdf' : 'AQUAMARINE_CV.pdf'); }
+
 sub ic { my ($k,$cls) = @_; $cls = $cls ? "i $cls" : 'i';
   return qq{<svg class="$cls" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">$I{$k}</svg>}; }
 
@@ -270,7 +273,7 @@ sub footer_html {
   </div>
   <div class="f-bottom"><div class="wrap">
     <span>© <span class="yr">2025</span> @{[t($T{all_rights})]} — @{[t($C{full})]}</span>@{[social_html()]}
-    <a href="${A}assets/doc/AQUAMARINE_CV.pdf" target="_blank" rel="noopener" style="display:inline-flex;gap:.5em;align-items:center">@{[ic('file')]} @{[t($T{profile})]}</a>
+    <a href="@{[profile_pdf()]}" target="_blank" rel="noopener" style="display:inline-flex;gap:.5em;align-items:center">@{[ic('file')]} @{[t($T{profile})]}</a>
   </div></div>
   <div class="f-credit"><div class="wrap"><span>@{[t($T{dev_by})]}</span>$dev</div></div>
 </footer>
@@ -484,17 +487,15 @@ sub quote_section {
   my @sizes = @{ $POOL_PRICES{sizes} };
   my @rows  = @{ $POOL_PRICES{rows} };
 
-  # step 1 — the pool type, each with the line explaining it
+  # step 1 — the pool type; the chosen one's description shows under the field
   my $types = '';
   for my $i (0 .. $#rows) {
-    $types .= qq{<button type="button" class="qz-opt" data-key="type" data-i="$i" data-label="@{[t($rows[$i]{t})]}">}
-            . qq{<b>@{[t($rows[$i]{t})]}</b><span>@{[t($rows[$i]{d})]}</span></button>};
+    $types .= qq{<option value="@{[t($rows[$i]{t})]}" data-i="$i" data-desc="@{[t($rows[$i]{d})]}">@{[t($rows[$i]{t})]}</option>};
   }
   # step 2 — the size
   my $sz = '';
   for my $k (0 .. $#sizes) {
-    $sz .= qq{<button type="button" class="qz-opt qz-opt-sm" data-key="size" data-i="$k" data-label="$sizes[$k] $u">}
-         . qq{<b>$sizes[$k] $u</b><span>@{[t($T{qz_depth})]}</span></button>};
+    $sz .= qq{<option value="$sizes[$k] $u" data-i="$k">$sizes[$k] $u</option>};
   }
   # the finishing schedule, shown with the price so the figure is accounted for
   my $spec = '';
@@ -526,9 +527,21 @@ sub quote_section {
         <li><span class="n">4</span><span class="t">@{[t($T{qz_s4})]}</span></li>
       </ol>
 
-      <div class="qz-step"><h3 class="qz-q">@{[t($T{qz_pick_type})]}</h3><div class="qz-opts">$types</div></div>
+      <div class="qz-step">
+        <h3 class="qz-q">@{[t($T{qz_pick_type})]}</h3>
+        <div class="field full"><label for="qz-type">@{[t($T{f_pool_type})]} <i>*</i></label>
+          <select id="qz-type" class="qz-pick" data-key="type" required>
+            <option value="">@{[t($T{f_choose})]}</option>$types</select></div>
+        <p class="qz-note" data-note="type"></p>
+      </div>
 
-      <div class="qz-step" hidden><h3 class="qz-q">@{[t($T{qz_pick_size})]}</h3><div class="qz-opts qz-opts-4">$sz</div></div>
+      <div class="qz-step" hidden>
+        <h3 class="qz-q">@{[t($T{qz_pick_size})]}</h3>
+        <div class="field full"><label for="qz-size">@{[t($T{f_pool_size})]} <i>*</i></label>
+          <select id="qz-size" class="qz-pick" data-key="size" required>
+            <option value="">@{[t($T{f_choose})]}</option>$sz</select></div>
+        <p class="qz-note">@{[t($T{qz_depth})]}</p>
+      </div>
 
       <div class="qz-step" hidden>
         <h3 class="qz-q">@{[t($T{qz_your})]}</h3>
@@ -921,7 +934,7 @@ sub build_all {
         <ul class="intro-caps">$caps</ul>
         <div class="intro-btns">
           <a class="cta-pill" href="about.html">@{[t($T{learn_more})]} @{[ic(fwd(),'ic')]}</a>
-          <a class="btn btn-ghost" href="${A}assets/doc/AQUAMARINE_CV.pdf" target="_blank" rel="noopener">@{[ic('dl','ic')]} @{[t($T{profile})]}</a>
+          <a class="btn btn-ghost" href="@{[profile_pdf()]}" target="_blank" rel="noopener">@{[ic('dl','ic')]} @{[t($T{profile})]}</a>
         </div>
       </div>
       <div class="intro-media" data-rv="s">
@@ -1042,9 +1055,8 @@ HTML
       <div data-rv>
         <span class="eyebrow">/ WHO WE ARE</span>
         <h2 class="h2" style="margin:1.1rem 0 1rem">@{[t($T{about_h})]}</h2>
-        <p class="lead">@{[t($T{about_lead2})]}</p>
         <ul class="ticks">
-          <li>@{[ic('check')]}<span>@{[t($T{about_lead})]}</span></li>
+          <li>@{[ic('check')]}<span>@{[t($T{about_t0})]}</span></li>
           <li>@{[ic('check')]}<span>@{[t($T{about_t1})]}</span></li>
           <li>@{[ic('check')]}<span>@{[t($T{about_t2})]}</span></li>
           <li>@{[ic('check')]}<span>@{[t($T{about_t4})]}</span></li>
@@ -1089,7 +1101,7 @@ HTML
 
 <section class="section">
   <div class="wrap-n">
-    <a class="dl" href="${A}assets/doc/AQUAMARINE_CV.pdf" target="_blank" rel="noopener" data-rv>
+    <a class="dl" href="@{[profile_pdf()]}" target="_blank" rel="noopener" data-rv>
       <span class="ico">@{[ic('file')]}</span>
       <span style="flex:1"><b>@{[t($T{profile_full})]}</b><span>@{[t($T{profile_sub})]}</span></span>
       @{[ic('dl')]}
@@ -1161,7 +1173,7 @@ HTML
         <h3 class="h3" style="margin-bottom:1.1rem">@{[t($T{all_services})]}</h3>
         @{[svclist_all($slug)]}
         <a class="btn btn-accent" href="order.html" style="width:100%;justify-content:center;margin-top:1.2rem">@{[t($T{order_service})]} @{[ic(fwd(),'ic')]}</a>
-        <a class="dl" href="${A}assets/doc/AQUAMARINE_CV.pdf" target="_blank" rel="noopener" style="margin-top:12px">
+        <a class="dl" href="@{[profile_pdf()]}" target="_blank" rel="noopener" style="margin-top:12px">
           <span class="ico">@{[ic('file')]}</span>
           <span style="flex:1"><b>@{[t($T{profile})]}</b><span>PDF</span></span>@{[ic('dl')]}
         </a>

@@ -435,6 +435,10 @@ push @GALLERY, qw(
   about_lead     => ['نحن شركة تعمل في مجال المياه بصفة عامة، متخصصون في أعمال إنشاء وصيانة حمامات السباحة الخاصة والعامة وحمامات سباحة النوادي الرياضية.',
                      'We work across the water sector, specialising in the construction and maintenance of private, public and sporting-club swimming pools.'],
   about_lead2    => ['نحن شركة تعمل في مجال المياه بصفة عامة.','We work across the water sector.'],
+  # the About page opens with about_lead2, so its first tick carries on from it
+  # rather than repeating the sentence a second time
+  about_t0       => ['متخصصون في أعمال إنشاء وصيانة حمامات السباحة الخاصة والعامة وحمامات سباحة النوادي الرياضية.',
+                     'Specialists in building and maintaining private, public and sporting-club swimming pools.'],
   about_t1       => ['أعمال شبكات مياه الشرب والصرف الصحي والري والحريق والمياه الساخنة للغرف الفندقية بجميع أنواعها — UPVC و PPR و HDPE.',
                      'Drinking water, sewerage, irrigation, firefighting and hotel hot-water networks of every type — UPVC, PPR and HDPE.'],
   about_t2       => ['إنشاء شبكات مكافحة الحريق الداخلية وأعمال الصحي الداخلي (السباكة الداخلية).',

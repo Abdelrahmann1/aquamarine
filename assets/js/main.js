@@ -476,6 +476,19 @@
       return true;
     };
 
+    // the two dropdowns: remember the choice, show its note, free the Next button
+    $$('.qz-pick', qz).forEach(function (sel) {
+      var key = sel.getAttribute('data-key');
+      var note = $('.qz-note[data-note="' + key + '"]', qz);
+      sel.addEventListener('change', function () {
+        var opt = sel.options[sel.selectedIndex];
+        if (opt && opt.value) picked[key] = { i: +opt.getAttribute('data-i'), label: opt.value };
+        else delete picked[key];
+        if (note) note.textContent = (opt && opt.getAttribute('data-desc')) || '';
+        next.disabled = !ready(at);
+      });
+    });
+
     var fill = function () {
       var p = prices[picked.type.i][picked.size.i];
       $('.qz-amount', qz).textContent = money(p);
@@ -505,15 +518,6 @@
       if (i === steps.length - 1) fill();
     };
 
-    $$('.qz-opt', qz).forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var key = btn.getAttribute('data-key');
-        picked[key] = { i: +btn.getAttribute('data-i'), label: btn.getAttribute('data-label') };
-        $$('.qz-opt[data-key="' + key + '"]', qz).forEach(function (b) { b.classList.toggle('on', b === btn); });
-        show(at + 1);   // a pick is an answer, so move straight on
-      });
-    });
-
     $$('input', qz).forEach(function (f) {
       f.addEventListener('input', function () {
         f.closest('.field').classList.remove('bad');
@@ -535,7 +539,8 @@
     if (reset) {
       reset.addEventListener('click', function () {
         picked = {};
-        $$('.qz-opt', qz).forEach(function (b) { b.classList.remove('on'); });
+        $$('.qz-pick', qz).forEach(function (s) { s.value = ''; });
+        $$('.qz-note[data-note]', qz).forEach(function (n) { n.textContent = ''; });
         $$('input', qz).forEach(function (f) { f.value = ''; });
         show(0);
       });

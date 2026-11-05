@@ -691,22 +691,10 @@
 .qz-q{font-size:clamp(1.1rem,1.9vw,1.4rem);margin-bottom:.5em}
 .qz-sub{font-size:.9rem;color:var(--ink-3);margin:0 0 clamp(16px,2vw,22px);line-height:1.8}
 
-/* the answer buttons */
-.qz-opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:clamp(10px,1.4vw,16px);margin-top:clamp(14px,1.8vw,20px)}
-.qz-opts-4{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
-.qz-opt{
-  text-align:start;cursor:pointer;font:inherit;font-family:var(--f-ar);
-  background:var(--paper-2);border:1px solid var(--line-2);border-radius:var(--rad-lg);
-  padding:clamp(16px,1.9vw,22px);position:relative;
-  transition:border-color .3s var(--ease),background .3s var(--ease),transform .4s var(--ease-out),box-shadow .4s var(--ease);
-}
-.qz-opt:hover{border-color:var(--b-sky);background:var(--card);transform:translateY(-3px);box-shadow:var(--shadow-m)}
-.qz-opt.on{border-color:var(--navy);background:var(--card);box-shadow:0 0 0 1px var(--navy),var(--shadow-m)}
-.qz-opt:focus-visible{outline:2px solid var(--b-bright);outline-offset:2px}
-.qz-opt b{display:block;font-size:1.05rem;font-weight:600;color:var(--navy);line-height:1.4}
-.qz-opt span{display:block;margin-top:.45em;font-size:.86rem;line-height:1.75;color:var(--ink-3)}
-.qz-opt-sm{text-align:center}
-.qz-opt-sm b{font-size:1.15rem}
+/* the pick steps are plain dropdowns, same as the rest of the site's fields */
+.qz .field{max-width:560px}
+.qz-note{margin:.9em 0 0;font-size:.89rem;line-height:1.8;color:var(--ink-3);max-width:66ch}
+.qz-note:empty{display:none}
 
 /* the price, once both picks are in */
 .qz-result{

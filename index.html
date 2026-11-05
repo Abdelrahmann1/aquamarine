@@ -119,9 +119,21 @@
         <li><span class="n">4</span><span class="t">Price</span></li>
       </ol>
 
-      <div class="qz-step"><h3 class="qz-q">Choose your pool type</h3><div class="qz-opts"><button type="button" class="qz-opt" data-key="type" data-i="0" data-label="Skimmer"><b>Skimmer</b><span>The water sits below the coping and is drawn through skimmers set into the wall. The most common and the most economical.</span></button><button type="button" class="qz-opt" data-key="type" data-i="1" data-label="Overflow"><b>Overflow</b><span>The water sits flush with the deck and spills into a perimeter channel feeding a balance tank. A cleaner look and better surface skimming.</span></button><button type="button" class="qz-opt" data-key="type" data-i="2" data-label="Horizon"><b>Horizon</b><span>The water spills over one or more edges so the pool appears to meet the horizon. Needs a balance tank and extra structural work.</span></button></div></div>
+      <div class="qz-step">
+        <h3 class="qz-q">Choose your pool type</h3>
+        <div class="field full"><label for="qz-type">Pool type <i>*</i></label>
+          <select id="qz-type" class="qz-pick" data-key="type" required>
+            <option value="">— Select —</option><option value="Skimmer" data-i="0" data-desc="The water sits below the coping and is drawn through skimmers set into the wall. The most common and the most economical.">Skimmer</option><option value="Overflow" data-i="1" data-desc="The water sits flush with the deck and spills into a perimeter channel feeding a balance tank. A cleaner look and better surface skimming.">Overflow</option><option value="Horizon" data-i="2" data-desc="The water spills over one or more edges so the pool appears to meet the horizon. Needs a balance tank and extra structural work.">Horizon</option></select></div>
+        <p class="qz-note" data-note="type"></p>
+      </div>
 
-      <div class="qz-step" hidden><h3 class="qz-q">Choose the size</h3><div class="qz-opts qz-opts-4"><button type="button" class="qz-opt qz-opt-sm" data-key="size" data-i="0" data-label="4 × 6 m"><b>4 × 6 m</b><span>1.20 m deep</span></button><button type="button" class="qz-opt qz-opt-sm" data-key="size" data-i="1" data-label="5 × 7 m"><b>5 × 7 m</b><span>1.20 m deep</span></button><button type="button" class="qz-opt qz-opt-sm" data-key="size" data-i="2" data-label="6 × 8 m"><b>6 × 8 m</b><span>1.20 m deep</span></button><button type="button" class="qz-opt qz-opt-sm" data-key="size" data-i="3" data-label="6 × 10 m"><b>6 × 10 m</b><span>1.20 m deep</span></button></div></div>
+      <div class="qz-step" hidden>
+        <h3 class="qz-q">Choose the size</h3>
+        <div class="field full"><label for="qz-size">Size <i>*</i></label>
+          <select id="qz-size" class="qz-pick" data-key="size" required>
+            <option value="">— Select —</option><option value="4 × 6 m" data-i="0">4 × 6 m</option><option value="5 × 7 m" data-i="1">5 × 7 m</option><option value="6 × 8 m" data-i="2">6 × 8 m</option><option value="6 × 10 m" data-i="3">6 × 10 m</option></select></div>
+        <p class="qz-note">1.20 m deep</p>
+      </div>
 
       <div class="qz-step" hidden>
         <h3 class="qz-q">How we reach you</h3>

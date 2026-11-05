@@ -151,6 +151,23 @@ perl build.pl
 
 ---
 
+## بروفايل الشركة · Company profile
+
+ملفان، كل لغة وملفها، و`profile_pdf()` في `build.pl` يختار بينهما:
+
+| اللغة | الملف |
+|---|---|
+| العربية | `assets/doc/AQUAMARINE_PROFILE_AR.pdf` |
+| English | `assets/doc/AQUAMARINE_CV.pdf` |
+
+كل روابط «بروفايل الشركة» في الهيدر والفوتر وصفحات الخدمات تمرّ على الدالة، فلا يوجد مسار
+مكتوب يدوياً. لتحديث أحدهما استبدل الملف بنفس الاسم ثم `perl build.pl`.
+
+> الملفان 23 ميجا لكل منهما — تقيلان على زوار الموبايل. يُستحسن تصديرهما من InDesign
+> بإعداد **Smallest File Size**.
+
+---
+
 ## التحليلات · Analytics (Microsoft Clarity)
 
 1. أنشئ مشروعاً مجانياً على [clarity.microsoft.com](https://clarity.microsoft.com) لعنوان الموقع.
