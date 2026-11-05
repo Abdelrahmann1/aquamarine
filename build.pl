@@ -473,58 +473,101 @@ sub proj_cards {
   return $o . '</div>';
 }
 
-# pool prices: one card per pool type, the four sizes listed inside it.
-# Prices stay in Western digits in both languages, the way they are quoted.
-# $band tints the section (the home page needs it between two white ones);
-# $more trades the order button for a link on to the full service page.
-sub price_section {
+# The pool quote, built step by step: pick a type, pick a size, leave your
+# details, and the last step shows the price and hands the lot to WhatsApp.
+# The price matrix rides along as JSON so main.js can look up type x size.
+# $band tints the section; $more links on to the full service page.
+sub quote_section {
   my ($band,$more) = @_;
-  my $u   = t($POOL_PRICES{unit});
-  my $cur = t($POOL_PRICES{cur});
-  my $comma = sub { my $n = shift; 1 while $n =~ s/^(\d+)(\d{3})/$1,$2/; $n };
+  my $u     = t($POOL_PRICES{unit});
+  my $cur   = t($POOL_PRICES{cur});
+  my @sizes = @{ $POOL_PRICES{sizes} };
+  my @rows  = @{ $POOL_PRICES{rows} };
 
-  # a tab per pool type; the open one shows its description and the four sizes
-  my $tabs = '<div class="ptabs" data-tabs role="tablist" data-rv>';
-  my $panes = '';
-  my $i = 0;
-  for my $r (@{ $POOL_PRICES{rows} }) {
-    (my $id = 'pool-' . lc $r->{t}[1]) =~ s/[^a-z0-9]+/-/g;
-    my $on = $i == 0;
-    $tabs .= qq{<a href="#$id" role="tab" aria-selected="@{[ $on ? 'true' : 'false' ]}"@{[ $on ? ' class="on"' : '' ]}>@{[t($r->{t})]}</a>};
-    my $tiles = '';
-    for my $k (0 .. $#{ $POOL_PRICES{sizes} }) {
-      # the amount runs LTR in both languages, with the currency beside it
-      $tiles .= qq{<div class="ptile"><span class="s">$POOL_PRICES{sizes}[$k] $u</span>}
-              . qq{<b class="p"><span class="tnum">@{[ $comma->($r->{p}[$k]) ]}</span><i>$cur</i></b></div>};
-    }
-    $panes .= qq{<div class="ppanel" id="$id" role="tabpanel"><p>@{[t($r->{d})]}</p>}
-            . qq{<div class="ptiles">$tiles</div></div>};
-    $i++;
+  # step 1 — the pool type, each with the line explaining it
+  my $types = '';
+  for my $i (0 .. $#rows) {
+    $types .= qq{<button type="button" class="qz-opt" data-key="type" data-i="$i" data-label="@{[t($rows[$i]{t})]}">}
+            . qq{<b>@{[t($rows[$i]{t})]}</b><span>@{[t($rows[$i]{d})]}</span></button>};
   }
-  $tabs .= '</div>';
-  my $cards = qq{$tabs<div class="ppanels" data-rv>$panes</div>};
+  # step 2 — the size
+  my $sz = '';
+  for my $k (0 .. $#sizes) {
+    $sz .= qq{<button type="button" class="qz-opt qz-opt-sm" data-key="size" data-i="$k" data-label="$sizes[$k] $u">}
+         . qq{<b>$sizes[$k] $u</b><span>@{[t($T{qz_depth})]}</span></button>};
+  }
+  # the finishing schedule, shown with the price so the figure is accounted for
+  my $spec = '';
+  $spec .= qq{<div><dt>@{[t($_->{t})]}</dt><dd>@{[t($_->{d})]}</dd></div>} for @POOL_SPEC;
 
-  # the finishing schedule the prices cover, under the cards on both pages
-  my $items = '';
-  $items .= qq{<div><dt>@{[t($_->{t})]}</dt><dd>@{[t($_->{d})]}</dd></div>} for @POOL_SPEC;
-  my $spec = qq{<div class="spec-wrap" data-rv><h3 class="h3">@{[t($T{spec_h})]}</h3>}
-           . qq{<p class="muted" style="margin:.4em 0 1.2rem;font-size:.92rem">@{[t($T{spec_lead})]}</p>}
-           . qq{<dl class="spec">$items</dl></div>};
+  # price matrix: [type][size], in the same order as the buttons
+  my $matrix = '[' . join(',', map { '[' . join(',', @{ $_->{p} }) . ']' } @rows) . ']';
 
-  my $cta = $more
+  my $more_link = $more
     ? qq{<a class="btn btn-ghost" href="service-pool-build.html" data-rv>@{[t($T{service_details})]} @{[ic(fwd(),'ic')]}</a>}
-    : qq{<a class="btn btn-accent" href="order.html" data-rv>@{[t($T{order_service})]} @{[ic(fwd(),'ic')]}</a>};
+    : '';
+
   return <<"HTML";
-<section class="section@{[ $band ? ' band' : '' ]}" id="prices">
+<section class="section@{[ $band ? ' band' : '' ]}" id="quote">
   <div class="wrap">
     <div class="sec-head"><div class="t" data-rv>
-      <span class="eyebrow">/ PRICING</span>
-      <h2 class="h2" style="margin-top:1rem">@{[t($T{prices_h})]}</h2>
-      <p class="lead" style="margin-top:.7rem">@{[t($T{prices_lead})]}</p>
-    </div>$cta</div>
-    $cards
-    $spec
-    <div class="note" style="margin-top:1.5rem" data-rv>@{[ic('info')]} @{[t($T{prices_note})]}</div>
+      <span class="eyebrow">/ QUOTE</span>
+      <h2 class="h2" style="margin-top:1rem">@{[t($T{qz_h})]}</h2>
+      <p class="lead" style="margin-top:.7rem">@{[t($T{qz_lead})]}</p>
+    </div>$more_link</div>
+
+    <div class="qz" data-quote data-wa="$C{wa}" data-cur="$cur" data-subject="@{[t($T{qz_wa_subject})]}" data-rv>
+      <script type="application/json" class="qz-data">{"p":$matrix}</script>
+
+      <ol class="qz-rail">
+        <li class="on"><span class="n">1</span><span class="t">@{[t($T{qz_s1})]}</span></li>
+        <li><span class="n">2</span><span class="t">@{[t($T{qz_s2})]}</span></li>
+        <li><span class="n">3</span><span class="t">@{[t($T{qz_s3})]}</span></li>
+        <li><span class="n">4</span><span class="t">@{[t($T{qz_s4})]}</span></li>
+      </ol>
+
+      <div class="qz-step"><h3 class="qz-q">@{[t($T{qz_pick_type})]}</h3><div class="qz-opts">$types</div></div>
+
+      <div class="qz-step" hidden><h3 class="qz-q">@{[t($T{qz_pick_size})]}</h3><div class="qz-opts qz-opts-4">$sz</div></div>
+
+      <div class="qz-step" hidden>
+        <h3 class="qz-q">@{[t($T{qz_your})]}</h3>
+        <p class="qz-sub">@{[t($T{qz_your_lead})]}</p>
+        <div class="fgrid">
+          <div class="field"><label for="q-name">@{[t($T{f_name})]} <i>*</i></label>
+            <input id="q-name" name="name" type="text" placeholder="@{[t($T{f_name_ph})]}" required>
+            <span class="err">@{[t($T{f_name_err})]}</span></div>
+          <div class="field"><label for="q-phone">@{[t($T{f_phone})]} <i>*</i></label>
+            <input id="q-phone" name="phone" type="tel" inputmode="tel" placeholder="01xxxxxxxxx" required>
+            <span class="err">@{[t($T{f_phone_err})]}</span></div>
+          <div class="field full"><label for="q-city">@{[t($T{f_city})]}</label>
+            <input id="q-city" name="city" type="text" placeholder="@{[t($T{f_city_ph})]}"></div>
+        </div>
+      </div>
+
+      <div class="qz-step" hidden>
+        <div class="qz-result">
+          <div class="qz-price">
+            <span class="qz-price-l">@{[t($T{qz_total})]}</span>
+            <b><span class="qz-amount tnum">0</span><i>$cur</i></b>
+          </div>
+          <dl class="qz-sum"></dl>
+        </div>
+        <h3 class="h3" style="margin-top:clamp(26px,3vw,38px)">@{[t($T{spec_h})]}</h3>
+        <p class="qz-sub">@{[t($T{spec_lead})]}</p>
+        <dl class="spec">$spec</dl>
+        <div class="note" style="margin-top:1.3rem">@{[ic('info')]} @{[t($T{prices_note})]}</div>
+        <div class="qz-send">
+          <button type="button" class="btn btn-accent btn-lg qz-go">@{[ic('wa','ic')]} @{[t($T{qz_send})]}</button>
+          <button type="button" class="btn btn-ghost qz-reset">@{[t($T{qz_again})]}</button>
+        </div>
+      </div>
+
+      <div class="qz-nav">
+        <button type="button" class="btn btn-ghost qz-back" hidden>@{[ic(back(),'ic')]} @{[t($T{qz_back})]}</button>
+        <button type="button" class="btn btn-accent qz-next" disabled>@{[t($T{qz_next})]} @{[ic(fwd(),'ic')]}</button>
+      </div>
+    </div>
   </div>
 </section>
 HTML
@@ -922,7 +965,7 @@ sub build_all {
   </div>
 </section>
 
-@{[price_section(1,1)]}
+@{[quote_section(1,1)]}
 <section class="nums">
   $waves
   <div class="wrap">
@@ -1136,7 +1179,7 @@ HTML
     @{[feats($SVC_FEATURES{$slug})]}
   </div>
 </section>
-@{[ $pb ? price_section() : '' ]}
+@{[ $pb ? quote_section() : '' ]}
 <section class="section@{[ $pb ? ' band' : '' ]}" id="work">
   <div class="wrap">
     <div class="sec-head"><div class="t" data-rv>

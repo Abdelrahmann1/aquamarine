@@ -451,6 +451,115 @@
     }
   }
 
+  /* ---------- pool quote, step by step ----------
+     Pick a type, pick a size, leave your details; the last step prices the
+     pair from the matrix the page carried down and hands it to WhatsApp. */
+  $$('[data-quote]').forEach(function (qz) {
+    var steps = $$('.qz-step', qz);
+    var rail = $$('.qz-rail li', qz);
+    var back = $('.qz-back', qz);
+    var next = $('.qz-next', qz);
+    var prices = JSON.parse($('.qz-data', qz).textContent).p;
+    var cur = qz.getAttribute('data-cur');
+    var at = 0;
+    var picked = {};
+
+    var money = function (n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); };
+
+    // step 3 needs a name and a phone; the pick steps need a pick
+    var ready = function (i) {
+      if (i === 0) return picked.type !== undefined;
+      if (i === 1) return picked.size !== undefined;
+      if (i === 2) {
+        return $$('input[required]', steps[2]).every(function (f) { return f.value.trim(); });
+      }
+      return true;
+    };
+
+    var fill = function () {
+      var p = prices[picked.type.i][picked.size.i];
+      $('.qz-amount', qz).textContent = money(p);
+      qz.setAttribute('data-price', p);
+      var dl = $('.qz-sum', qz);
+      dl.innerHTML = '';
+      [['type', $('.qz-rail li:nth-child(1) .t', qz).textContent],
+       ['size', $('.qz-rail li:nth-child(2) .t', qz).textContent]].forEach(function (pair) {
+        var row = document.createElement('div');
+        row.innerHTML = '<dt></dt><dd></dd>';
+        $('dt', row).textContent = pair[1];
+        $('dd', row).textContent = picked[pair[0]].label;
+        dl.appendChild(row);
+      });
+    };
+
+    var show = function (i) {
+      at = i;
+      steps.forEach(function (s, k) { s.hidden = k !== i; });
+      rail.forEach(function (li, k) {
+        li.classList.toggle('on', k === i);
+        li.classList.toggle('done', k < i);
+      });
+      back.hidden = i === 0;
+      next.hidden = i === steps.length - 1;
+      next.disabled = !ready(i);
+      if (i === steps.length - 1) fill();
+    };
+
+    $$('.qz-opt', qz).forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var key = btn.getAttribute('data-key');
+        picked[key] = { i: +btn.getAttribute('data-i'), label: btn.getAttribute('data-label') };
+        $$('.qz-opt[data-key="' + key + '"]', qz).forEach(function (b) { b.classList.toggle('on', b === btn); });
+        show(at + 1);   // a pick is an answer, so move straight on
+      });
+    });
+
+    $$('input', qz).forEach(function (f) {
+      f.addEventListener('input', function () {
+        f.closest('.field').classList.remove('bad');
+        next.disabled = !ready(at);
+      });
+    });
+
+    next.addEventListener('click', function () {
+      if (at === 2) {
+        var bad = $$('input[required]', steps[2]).filter(function (f) { return !f.value.trim(); });
+        bad.forEach(function (f) { f.closest('.field').classList.add('bad'); });
+        if (bad.length) { bad[0].focus(); return; }
+      }
+      if (ready(at)) show(at + 1);
+    });
+    back.addEventListener('click', function () { show(at - 1); });
+
+    var reset = $('.qz-reset', qz);
+    if (reset) {
+      reset.addEventListener('click', function () {
+        picked = {};
+        $$('.qz-opt', qz).forEach(function (b) { b.classList.remove('on'); });
+        $$('input', qz).forEach(function (f) { f.value = ''; });
+        show(0);
+      });
+    }
+
+    $('.qz-go', qz).addEventListener('click', function () {
+      var v = function (n) { var el = $('input[name="' + n + '"]', qz); return el ? el.value.trim() : ''; };
+      var lines = [
+        qz.getAttribute('data-subject') || $('.sec-head .h2', qz.closest('section')).textContent,
+        $('.qz-rail li:nth-child(1) .t', qz).textContent + ': ' + picked.type.label,
+        $('.qz-rail li:nth-child(2) .t', qz).textContent + ': ' + picked.size.label,
+        $('.qz-price-l', qz).textContent + ': ' + money(qz.getAttribute('data-price')) + ' ' + cur,
+        v('name') ? $('label[for="q-name"]', qz).textContent.replace('*', '').trim() + ': ' + v('name') : '',
+        v('phone') ? $('label[for="q-phone"]', qz).textContent.replace('*', '').trim() + ': ' + v('phone') : '',
+        v('city') ? $('label[for="q-city"]', qz).textContent.trim() + ': ' + v('city') : ''
+      ].filter(Boolean);
+      track('quote_sent');
+      window.open('https://api.whatsapp.com/send?phone=' + qz.getAttribute('data-wa') +
+                  '&text=' + encodeURIComponent(lines.join('\n')), '_blank', 'noopener');
+    });
+
+    show(0);
+  });
+
   /* ---------- order form: pool type and size, for the pool services ---------- */
   var svcSelect = $('select[name="service"]');
   if (svcSelect) {
