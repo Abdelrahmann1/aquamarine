@@ -19,6 +19,8 @@ RewriteRule ^(ar/)?index\.html$ /$1home.php [L]
 
 RewriteRule ^(ar/)?projects\.html$ /$1projects.php [R=301,L]
 RewriteRule ^(ar/)?gallery\.html$ /$1gallery.php [R=301,L]
+RewriteRule ^(ar/)?about\.html$ /$1about.php [R=301,L]
+RewriteRule ^(ar/)?services\.html$ /$1services.php [R=301,L]
 RewriteRule ^(ar/)?project-([a-zA-Z0-9_-]+)\.html$ /$1project.php?slug=$2 [R=301,L]
 
 # php -- BEGIN cPanel-generated handler, do not edit

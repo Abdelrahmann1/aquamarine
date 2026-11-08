@@ -162,6 +162,60 @@ function aqm_hero(string $a, array $fallback): string {
   return $o;
 }
 
+// A value the office set in the dashboard, or what the build shipped.
+// Read once per request: these are a handful of rows the whole page
+// asks about again and again.
+function aqm_settings(): array {
+  static $all = null;
+  if ($all !== null) return $all;
+  $all = [];
+  $pdo = db(true);
+  if ($pdo) {
+    try {
+      foreach ($pdo->query('SELECT k, v FROM settings')->fetchAll() as $r) {
+        $all[$r['k']] = $r['v'];
+      }
+    } catch (Throwable $e) {
+      $all = [];
+    }
+  }
+  return $all;
+}
+
+function aqm_set(string $key, string $fallback): string {
+  $all = aqm_settings();
+  $v = $all[$key] ?? '';
+  return $v !== '' ? $v : $fallback;
+}
+
+// The hero bar writes single digits as 09, the way the shipped page does.
+function aqm_pad(string $v): string {
+  return (strlen($v) === 1 && ctype_digit($v)) ? '0' . $v : $v;
+}
+
+// A service's photograph: the one uploaded for it, else the shipped one.
+function aqm_svc_imgs(): array {
+  static $all = null;
+  if ($all !== null) return $all;
+  $all = [];
+  $pdo = db(true);
+  if ($pdo) {
+    try {
+      foreach ($pdo->query('SELECT slug, file FROM service_images')->fetchAll() as $r) {
+        $all[$r['slug']] = $r['file'];
+      }
+    } catch (Throwable $e) {
+      $all = [];
+    }
+  }
+  return $all;
+}
+
+function aqm_svc_img(string $slug, string $fallback): string {
+  $all = aqm_svc_imgs();
+  return isset($all[$slug]) && $all[$slug] !== '' ? $all[$slug] : $fallback;
+}
+
 // Arabic counts agree differently from English ones: one, two, a few
 // (3-10) and many each take their own form.
 function aqm_photos_n(int $n, string $lang): string {

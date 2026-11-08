@@ -72,6 +72,23 @@ return [
   KEY idx_sort (sort)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
 
+// Small values the site shows and the office changes: the headline
+// numbers, and anything else of that kind later. A key with no row
+// falls back to what the build shipped.
+'settings' => "CREATE TABLE IF NOT EXISTS settings (
+  k           VARCHAR(60) NOT NULL PRIMARY KEY,
+  v           VARCHAR(190) NOT NULL,
+  updated_at  DATETIME NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+// The services themselves live in content.pl; only a replacement
+// photograph is kept here, keyed by the service's slug.
+'service_images' => "CREATE TABLE IF NOT EXISTS service_images (
+  slug        VARCHAR(80) NOT NULL PRIMARY KEY,
+  file        VARCHAR(190) NOT NULL,
+  updated_at  DATETIME NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
 'project_images' => "CREATE TABLE IF NOT EXISTS project_images (
   id          INT AUTO_INCREMENT PRIMARY KEY,
   project_id  INT NOT NULL,

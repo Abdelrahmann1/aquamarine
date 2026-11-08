@@ -895,3 +895,12 @@ html{scroll-padding-top:140px}
   .feat{display:flex;align-items:baseline;gap:14px;padding:16px 18px}
   .feat-n{flex:none;margin:0}
 }
+
+/* The equipment's origin is the first thing a buyer asks about, so it
+   sits above the finishing schedule as a mark, not a row in it. */
+.eu-mark{display:flex;align-items:center;gap:11px;margin:clamp(22px,2.6vw,32px) 0 0;
+  padding:14px 17px;border-radius:13px;background:var(--aqua-soft);
+  border:1px solid rgba(14,165,196,.3);color:var(--aqua-d);
+  font-size:clamp(14.5px,1.5vw,16px);line-height:1.5}
+.eu-mark .i{flex:0 0 auto;width:21px;height:21px;stroke-width:2.1}
+.eu-mark b{font-weight:600}

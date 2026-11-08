@@ -335,8 +335,8 @@ push @GALLERY, qw(
 # ------------------------------------------------------------
 @NAV = (
   ['index.html',    ['الرئيسية','Home']],
-  ['about.html',    ['من نحن','About']],
-  ['services.html', ['الخدمات','Services'], 'sub'],
+  ['about.php',    ['من نحن','About']],
+  ['services.php', ['الخدمات','Services'], 'sub'],
   ['projects.php', ['المشروعات','Projects']],
   ['works.html',    ['سابقة الأعمال','Track Record'], undef, 'minor'],
   ['gallery.php',  ['ألبوم الصور','Gallery'], undef, 'minor'],
@@ -395,6 +395,7 @@ push @GALLERY, qw(
   f_pool_type    => ['نوع حمام السباحة','Pool type'],
   f_pool_size    => ['المقاس','Size'],
   f_choose       => ['— اختر —','— Select —'],
+  spec_eu        => ['جميع معدات حمام السباحة صناعة أوروبية','All the pool equipment is European-made'],
   spec_h         => ['توصيف التشطيب','Finishing schedule'],
   spec_lead      => ['الخامات المسعَّرة أعلاه.','The materials covered by the prices above.'],
   prices_note    => ['السعر النهائي يتحدد بعد معاينة الموقع، ويختلف حسب المقاس والتشطيب والمعدات المطلوبة.',
@@ -594,7 +595,7 @@ our %SVC_FEATURES = (
                         ['تصميم النوافير والشلالات','Fountain and water-feature design']],
   'pool-build'      => [['أعمال مدنية وخرسانية','Civil and concrete works'],
                         ['عزل ومنع تسرب','Waterproofing and leak prevention'],
-                        ['تشطيبات وتركيب المعدات','Finishes and equipment installation']],
+                        ['معدات صناعة أوروبية','European-made equipment']],
   'fountains'       => [['نوافير لاندسكيب ومداخل','Landscape and entrance fountains'],
                         ['شلالات وواجهات مائية','Waterfalls and water walls'],
                         ['إضاءة ولوحات تحكم','Lighting and control panels']],

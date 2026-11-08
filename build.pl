@@ -162,7 +162,7 @@ sub mmenu_html {
         my $cur = $file eq "service-$s->{slug}.html" ? ' class="on" aria-current="page"' : '';
         $o .= qq{<a href="service-$s->{slug}.html"$cur><span class="mn">@{[numeral($k++)]}</span><span class="st">@{[t($s->{t})]}</span></a>};
       }
-      $o .= qq{<a class="all" href="services.html"><span class="st">@{[t($T{all_services})]}</span>} . ic(fwd(),'ic') . q{</a>}
+      $o .= qq{<a class="all" href="services.php"><span class="st">@{[t($T{all_services})]}</span>} . ic(fwd(),'ic') . q{</a>}
           . q{</div></div></div></li>};
     } else {
       $o .= "$li$a" . ic(fwd(),'go') . q{</a></li>};
@@ -267,7 +267,7 @@ sub footer_html {
       </div>
       <div>
         <h4>@{[t($T{our_services})]}</h4>
-        <ul>$svc<li><a href="services.html">@{[t($T{all_services})]}</a></li></ul>
+        <ul>$svc<li><a href="services.php">@{[t($T{all_services})]}</a></li></ul>
       </div>
     </div>
   </div>
@@ -443,15 +443,20 @@ sub svclist_all {
   return $o . '</ul>';
 }
 
+# $php emits the photograph as a lookup, so a card picks up whatever was
+# uploaded for that service in the dashboard.
 sub svc_cards {
-  my ($limit) = @_;
+  my ($limit,$php) = @_;
   my $o = '<div class="svc-grid">';
   my $n = 0;
   for my $s (@SERVICES) {
     last if $limit && $n >= $limit;
     my $d = sprintf('%.2f', ($n % 3) * 0.09);
+    my $img = $php
+      ? qq{<?= h(aqm_svc_img(@{[php_str($s->{slug})]}, @{[php_str($s->{img})]})) ?>}
+      : $s->{img};
     $o .= qq{<article class="svc" data-rv data-delay="$d">}
-       . qq{<div class="svc-img"><img src="${A}assets/img/$s->{img}" alt="@{[t($s->{t})]}" loading="lazy"><span class="numeral">@{[numeral($n)]}</span></div>}
+       . qq{<div class="svc-img"><img src="${A}assets/img/$img" alt="@{[t($s->{t})]}" loading="lazy"><span class="numeral">@{[numeral($n)]}</span></div>}
        . qq{<div class="svc-body"><h3>@{[t($s->{t})]}</h3><p>@{[t($s->{d})]}</p>}
        . qq{<a class="tlink" href="service-$s->{slug}.html">@{[t($T{service_details})]}} . ic(fwd(),'ic') . q{</a></div></article>};
     $n++;
@@ -515,6 +520,34 @@ sub php_albums {
                                '[' . join(',', @files) . ']') . ']';
   }
   return '[' . join(',', @out) . ']';
+}
+
+# A JSON string, for the small data files the dashboard reads.
+sub json_str {
+  my $s = shift;
+  $s = '' unless defined $s;
+  $s =~ s/\\/\\\\/g;
+  $s =~ s/"/\\"/g;
+  $s =~ s/\r//g;
+  $s =~ s/\n/\\n/g;
+  $s =~ s/\t/\\t/g;
+  return '"' . $s . '"';
+}
+
+# The service list the dashboard shows, so it can offer a photograph for
+# each one without keeping a second copy of the services.
+sub write_service_seed {
+  our @SERVICES;
+  my @out = map {
+    '  {"slug": ' . json_str($_->{slug})
+    . ', "t": '   . json_str($_->{t}[0])
+    . ', "img": ' . json_str($_->{img}) . '}'
+  } @SERVICES;
+  open(my $fh, '>:encoding(UTF-8)', 'admin/seed-services.json')
+    or die "admin/seed-services.json: $!";
+  print {$fh} "[\n" . join(",\n", @out) . "\n]\n";
+  close $fh;
+  print "  admin/seed-services.json\n";
 }
 
 sub write_render_php {
@@ -683,6 +716,60 @@ function aqm_hero(string $a, array $fallback): string {
     $i++;
   }
   return $o;
+}
+
+// A value the office set in the dashboard, or what the build shipped.
+// Read once per request: these are a handful of rows the whole page
+// asks about again and again.
+function aqm_settings(): array {
+  static $all = null;
+  if ($all !== null) return $all;
+  $all = [];
+  $pdo = db(true);
+  if ($pdo) {
+    try {
+      foreach ($pdo->query('SELECT k, v FROM settings')->fetchAll() as $r) {
+        $all[$r['k']] = $r['v'];
+      }
+    } catch (Throwable $e) {
+      $all = [];
+    }
+  }
+  return $all;
+}
+
+function aqm_set(string $key, string $fallback): string {
+  $all = aqm_settings();
+  $v = $all[$key] ?? '';
+  return $v !== '' ? $v : $fallback;
+}
+
+// The hero bar writes single digits as 09, the way the shipped page does.
+function aqm_pad(string $v): string {
+  return (strlen($v) === 1 && ctype_digit($v)) ? '0' . $v : $v;
+}
+
+// A service's photograph: the one uploaded for it, else the shipped one.
+function aqm_svc_imgs(): array {
+  static $all = null;
+  if ($all !== null) return $all;
+  $all = [];
+  $pdo = db(true);
+  if ($pdo) {
+    try {
+      foreach ($pdo->query('SELECT slug, file FROM service_images')->fetchAll() as $r) {
+        $all[$r['slug']] = $r['file'];
+      }
+    } catch (Throwable $e) {
+      $all = [];
+    }
+  }
+  return $all;
+}
+
+function aqm_svc_img(string $slug, string $fallback): string {
+  $all = aqm_svc_imgs();
+  return isset($all[$slug]) && $all[$slug] !== '' ? $all[$slug] : $fallback;
 }
 
 // Arabic counts agree differently from English ones: one, two, a few
@@ -930,7 +1017,8 @@ sub quote_section {
           </div>
           <dl class="qz-sum"></dl>
         </div>
-        <h3 class="h3" style="margin-top:clamp(26px,3vw,38px)">@{[t($T{spec_h})]}</h3>
+        <p class="eu-mark">@{[ic('check')]}<b>@{[t($T{spec_eu})]}</b></p>
+        <h3 class="h3" style="margin-top:clamp(22px,2.6vw,32px)">@{[t($T{spec_h})]}</h3>
         <p class="qz-sub">@{[t($T{spec_lead})]}</p>
         <dl class="spec">$spec</dl>
         <div class="note" style="margin-top:1.3rem">@{[ic('info')]} @{[t($T{prices_note})]}</div>
@@ -1137,16 +1225,21 @@ sub captcha {
 sub form_msg  { return qq{<div class="form-msg">} . ic('check') . '<span>' . t($T{form_ok}) . '</span></div>'; }
 sub form_note { return qq{<p class="form-note">} . ic('info') . '<span>' . t($T{form_note}) . '</span></p>'; }
 
+# The headline numbers. With $php each one is read from the dashboard,
+# falling back to the figure shipped here.
 sub stats_block {
-  my ($dark) = @_;
+  my ($dark,$php) = @_;
   my @s = (
-    [33,'+',$T{stat_projects}], [50,'+',$T{stat_pools}],
-    [9,'',$T{stat_services}],   [3,'',$T{stat_countries}],
+    ['n_projects',33,'+',$T{stat_projects}], ['n_pools',50,'+',$T{stat_pools}],
+    ['n_services',9,'',$T{stat_services}],   ['n_countries',3,'',$T{stat_countries}],
   );
   my $o = '<div class="stats" data-rv>';
   for my $x (@s) {
-    my $em = $x->[1] ? "<em>$x->[1]</em>" : '';
-    $o .= qq{<div class="stat"><b class="tnum"><span data-count="$x->[0]">0</span>$em</b><span>@{[t($x->[2])]}</span></div>};
+    my $em = $x->[2] ? "<em>$x->[2]</em>" : '';
+    my $v = $php
+      ? qq{<?= h(aqm_set(@{[php_str($x->[0])]}, @{[php_str($x->[1])]})) ?>}
+      : $x->[1];
+    $o .= qq{<div class="stat"><b class="tnum"><span data-count="$v">0</span>$em</b><span>@{[t($x->[3])]}</span></div>};
   }
   return $o . '</div>';
 }
@@ -1221,18 +1314,39 @@ sub build_all {
 
   # services index: a list that drives a sticky preview (images load on first hover)
   my ($sx_list, $sx_media) = ('', '');
+  # the bar under the hero, shipped figures and dashboard lookups
+  my @bar = (['n_projects','33',$T{stat_projects}], ['n_services','09',$T{stat_services}],
+             ['n_countries','03',$T{stat_countries2}], ['n_support','24/7',$T{stat_support}]);
+  my ($hbar, $hbar_php) = ('', '');
+  for my $b (@bar) {
+    $hbar     .= qq{<li><b class="tnum">$b->[1]</b><span>@{[t($b->[2])]}</span></li>};
+    my $raw = $b->[1] =~ /^0(\d)$/ ? $1 : $b->[1];
+    $hbar_php .= qq{<li><b class="tnum"><?= h(aqm_pad(aqm_set(@{[php_str($b->[0])]}, @{[php_str($raw)]}))) ?></b>}
+               . qq{<span>@{[t($b->[2])]}</span></li>};
+  }
+
+  # the same figure twice: once with the shipped photograph for index.html,
+  # once with the dashboard's lookup for home.php
+  my $sx_media_php = '';
+  my $figure = sub {
+    my ($i,$s,$on,$f) = @_;
+    my $src = $i == 0
+      ? qq{src="${A}assets/img/$f"}
+      : qq{src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-src="${A}assets/img/$f"};
+    return qq{<figure data-i="$i"$on><img $src alt="@{[t($s->{t})]}">}
+         . qq{<figcaption><span class="num">@{[numeral($i)]}</span><h3>@{[t($s->{t})]}</h3><p>@{[t($s->{d})]}</p>}
+         . qq{<a class="cta-pill" href="service-$s->{slug}.html">@{[t($T{service_details})]}} . ic(fwd(),'ic') . q{</a></figcaption></figure>};
+  };
+
   for my $i (0..$#SERVICES) {
     my $s  = $SERVICES[$i];
     my $on = $i == 0 ? ' class="on"' : '';
     my $nn = sprintf('%02d', $i + 1);
     $sx_list .= qq{<li$on><a href="service-$s->{slug}.html" data-i="$i"><span class="n">$nn</span>}
               . qq{<span class="t">@{[t($s->{t})]}</span><span class="go">@{[ic(fwd())]}</span></a></li>};
-    my $src = $i == 0
-      ? qq{src="${A}assets/img/$s->{img}"}
-      : qq{src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-src="${A}assets/img/$s->{img}"};
-    $sx_media .= qq{<figure data-i="$i"$on><img $src alt="@{[t($s->{t})]}">}
-               . qq{<figcaption><span class="num">@{[numeral($i)]}</span><h3>@{[t($s->{t})]}</h3><p>@{[t($s->{d})]}</p>}
-               . qq{<a class="cta-pill" href="service-$s->{slug}.html">@{[t($T{service_details})]}} . ic(fwd(),'ic') . q{</a></figcaption></figure>};
+    $sx_media     .= $figure->($i, $s, $on, $s->{img});
+    $sx_media_php .= $figure->($i, $s, $on,
+                      qq{<?= h(aqm_svc_img(@{[php_str($s->{slug})]}, @{[php_str($s->{img})]})) ?>});
   }
 
   # projects: bento mosaic
@@ -1282,18 +1396,13 @@ sub build_all {
       <h1 class="display">@{[t($T{hero_a})]}<br><b>@{[t($T{hero_b})]}</b></h1>
       <p class="lead">@{[t($T{hero_lead})]}</p>
       <div class="hero-btns">
-        <a class="btn btn-accent btn-lg" href="services.html">@{[t($T{browse_services})]} @{[ic(fwd(),'ic')]}</a>
+        <a class="btn btn-accent btn-lg" href="services.php">@{[t($T{browse_services})]} @{[ic(fwd(),'ic')]}</a>
         <a class="btn btn-ghost btn-lg" href="works.html">@{[t($T{track_record})]}</a>
       </div>
     </div>
   </div>
   <span class="scroll-cue">@{[t($T{scroll})]}</span>
-  <div class="hero-bar"><div class="wrap"><ul>
-    <li><b class="tnum">33</b><span>@{[t($T{stat_projects})]}</span></li>
-    <li><b class="tnum">09</b><span>@{[t($T{stat_services})]}</span></li>
-    <li><b class="tnum">03</b><span>@{[t($T{stat_countries2})]}</span></li>
-    <li><b class="tnum">24/7</b><span>@{[t($T{stat_support})]}</span></li>
-  </ul></div></div>
+  <div class="hero-bar"><div class="wrap"><ul>$hbar</ul></div></div>
 </section>
 
 <div class="marq clients"><div class="marq-in">$clients</div></div>
@@ -1307,7 +1416,7 @@ sub build_all {
         <p class="lead">@{[t($T{about_lead})]}</p>
         <ul class="intro-caps">$caps</ul>
         <div class="intro-btns">
-          <a class="cta-pill" href="about.html">@{[t($T{learn_more})]} @{[ic(fwd(),'ic')]}</a>
+          <a class="cta-pill" href="about.php">@{[t($T{learn_more})]} @{[ic(fwd(),'ic')]}</a>
           <a class="btn btn-ghost" href="@{[profile_pdf()]}" target="_blank" rel="noopener">@{[ic('dl','ic')]} @{[t($T{profile})]}</a>
         </div>
       </div>
@@ -1329,7 +1438,7 @@ sub build_all {
         <h2 class="h2" style="margin-top:1rem">@{[t($T{sx_h})]}</h2>
         <p class="lead" style="margin-top:.7rem">@{[t($T{sx_l})]}</p>
       </div>
-      <a class="btn btn-ghost" href="services.html" data-rv>@{[t($T{all_services})]} @{[ic(fwd(),'ic')]}</a>
+      <a class="btn btn-ghost" href="services.php" data-rv>@{[t($T{all_services})]} @{[ic(fwd(),'ic')]}</a>
     </div>
     <div class="sx">
       <ol class="sx-list" data-rv>$sx_list</ol>
@@ -1434,6 +1543,8 @@ HTML
     $body_php =~ s/\Q$slides\E/$slides_php/;
     $body_php =~ s/\Q$bento\E/$bento_php/;
     $body_php =~ s/\Q$galprev\E/$gal_php/;
+    $body_php =~ s/\Q$hbar\E/$hbar_php/;
+    $body_php =~ s/\Q$sx_media\E/$sx_media_php/;
 
     my $pre = php_head() . qq{\$hrows = aqm_rows();
 \$albums = aqm_albums('$LANG', aqm_shipped('$LANG')); ?>};
@@ -1465,7 +1576,7 @@ HTML
         <div class="m2"><img src="${A}assets/img/aquamarine1(1).jpeg" alt="@{[t($C{name})]}" loading="lazy"></div>
       </div>
     </div>
-    <div style="margin-top:clamp(44px,5.5vw,72px)">@{[stats_block()]}</div>
+    <div style="margin-top:clamp(44px,5.5vw,72px)">@{[stats_block(0,1)]}</div>
   </div>
 </section>
 
@@ -1489,7 +1600,7 @@ HTML
     </div></div>
     @{[feats(\@FULLSERVICES)]}
     <div style="margin-top:clamp(32px,4vw,52px);display:flex;gap:13px;flex-wrap:wrap" data-rv>
-      <a class="btn" href="services.html">@{[t($T{service_detail_cta})]} @{[ic(fwd(),'ic')]}</a>
+      <a class="btn" href="services.php">@{[t($T{service_detail_cta})]} @{[ic(fwd(),'ic')]}</a>
       <a class="btn btn-ghost" href="works.html">@{[t($T{track_record})]}</a>
     </div>
   </div>
@@ -1509,7 +1620,8 @@ HTML
 
 @{[cta_band()]}
 HTML
-  page('about.html', t($T{who_we_are}) . " — $co", t($T{meta_about}), 'about.html', $body); $n++;
+  page_php('about.php', t($T{who_we_are}) . " — $co", t($T{meta_about}),
+           'about.php', $body, '', php_head() . '?>'); $n++;
   }
 
   # ---------------------------------------------------------- SERVICES
@@ -1518,7 +1630,7 @@ HTML
                    [ar() ? '9 خدمات' : '9 services', ar() ? 'تصميم وتنفيذ وصيانة' : 'Design, build, maintain'])
   . <<"HTML";
 <section class="section">
-  <div class="wrap">@{[svc_cards()]}</div>
+  <div class="wrap">@{[svc_cards(undef,1)]}</div>
 </section>
 
 @{[imgband('aquamarine22(1).jpg', t($T{band_h}), t($T{band_lead}), 'order.html', t($T{order_now}))]}
@@ -1536,7 +1648,8 @@ HTML
 
 @{[cta_band()]}
 HTML
-  page('services.html', t($NAV[2][1]) . " — $co", t($T{meta_services}), 'services.html', $body); $n++;
+  page_php('services.php', t($NAV[2][1]) . " — $co", t($T{meta_services}),
+           'services.php', $body, '', php_head() . '?>'); $n++;
   }
 
   # ---------------------------------------------------------- SERVICE DETAIL
@@ -1550,7 +1663,7 @@ HTML
       ? qq{<img src="${A}assets/img/20080119(002).jpg" alt="$title" loading="lazy" style="border-radius:var(--rad-lg);width:100%;margin:1.8rem 0">}
       : '';
 
-    my $body = phero($title, $blurb, $img, [[t($NAV[2][1]),'services.html'],[$title]],
+    my $body = phero($title, $blurb, $img, [[t($NAV[2][1]),'services.php'],[$title]],
                      [map { t($_) } @{ $SVC_FEATURES{$slug} }])
     . subnav([['overview',t($T{jump_overview})],['included',t($T{jump_included})],
               ($slug eq 'pool-build' ? ['prices',t($T{jump_prices})] : ()),
@@ -1614,7 +1727,7 @@ HTML
 @{[pager($prev,$next)]}
 @{[cta_band()]}
 HTML
-    page("service-$slug.html", "$title — $co", $blurb, 'services.html', $body); $n++;
+    page("service-$slug.html", "$title — $co", $blurb, 'services.php', $body); $n++;
   }
 
   # ---------------------------------------------------------- PROJECTS
@@ -1674,7 +1787,7 @@ HTML
       <span class="eyebrow">/ TRACK RECORD</span>
       <h2 class="h2" style="margin-top:1rem">@{[t($T{numbers_h})]}</h2>
     </div></div>
-    @{[stats_block()]}
+    @{[stats_block(0,1)]}
   </div>
 </section>
 
@@ -2031,7 +2144,8 @@ print "  English (LTR) -> ./      $en pages\n";
 my $ar = build_all();
 print "  Arabic  (RTL) -> ./ar/   $ar pages\n";
 
-# One copy serves both languages, so it is written after the pages.
+# One copy serves both languages, so these are written after the pages.
 write_render_php();
+write_service_seed();
 
 print "Done. ", $ar + $en, " pages total.\n";
