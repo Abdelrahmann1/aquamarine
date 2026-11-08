@@ -10,6 +10,23 @@
   var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   // a Microsoft Clarity custom event; does nothing when Clarity isn't installed
   var track = function (name) { if (typeof window.clarity === 'function') window.clarity('event', name); };
+
+  /* Every enquiry is filed in the dashboard as well as handed to WhatsApp.
+     keepalive lets the request finish even as the WhatsApp tab opens, and a
+     failure is swallowed: the visitor's message must never depend on it. */
+  var saveLead = function (data) {
+    if (!window.fetch) return;
+    try {
+      data.page = location.pathname;
+      data.lang = document.documentElement.lang === 'en' ? 'en' : 'ar';
+      fetch('/admin/api/submit.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+        keepalive: true
+      })['catch'](function () {});
+    } catch (e) {}
+  };
   // mark the contact moments: calls, WhatsApp, email and the company profile
   document.addEventListener('click', function (e) {
     var a = e.target.closest ? e.target.closest('a[href]') : null;
@@ -558,6 +575,16 @@
         v('city') ? $('label[for="q-city"]', qz).textContent.trim() + ': ' + v('city') : ''
       ].filter(Boolean);
       track('quote_sent');
+      saveLead({
+        kind: 'quote',
+        name: v('name'),
+        phone: v('phone'),
+        city: v('city'),
+        service: qz.getAttribute('data-subject') || '',
+        pool_type: picked.type.label,
+        pool_size: picked.size.label,
+        amount: qz.getAttribute('data-price')
+      });
       window.open('https://api.whatsapp.com/send?phone=' + qz.getAttribute('data-wa') +
                   '&text=' + encodeURIComponent(lines.join('\n')), '_blank', 'noopener');
     });
@@ -619,9 +646,22 @@
       if (!ok) { if (first) first.focus(); return; }
       track(form.getAttribute('data-track') || 'form_sent');
 
-      // No backend on this static build — hand the enquiry to WhatsApp,
-      // which is how the company already takes orders.
       var get = function (n) { var el = form.querySelector('[name="' + n + '"]'); return el ? el.value.trim() : ''; };
+
+      saveLead({
+        kind: form.getAttribute('data-kind') || 'order',
+        name: get('name'),
+        phone: get('phone'),
+        email: get('email'),
+        service: get('service'),
+        pool_type: get('pool_type'),
+        pool_size: get('pool_size'),
+        city: get('city'),
+        message: get('message')
+      });
+
+      // The enquiry also goes to WhatsApp, which is how the company
+      // already takes orders.
       var lines = [
         form.getAttribute('data-subject') || 'رسالة من الموقع',
         get('name') ? 'الاسم: ' + get('name') : '',

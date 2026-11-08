@@ -1,0 +1,23 @@
+# Copy this file to deploy.conf and fill in the blanks.
+# deploy.conf is listed in .gitignore, so the password never leaves the machine.
+#
+#   transport = ftps   works today — Pure-FTPd with AUTH TLS, encrypted
+#   transport = ssh    once the host opens SSH; then no password is needed at all
+
+transport = ftps
+# The FTP service presents the server hostname in its TLS certificate,
+# so connect by that name and the encryption stays verified.
+host      = mail.erasoft-eg.com
+site      = aquamarine-ws.com
+user      = deploy@aquamarine-ws.com
+pass      =
+port      = 21
+
+# Leave root empty when the FTP account is locked to public_html (it logs
+# straight into the site). Use root = public_html for the main account.
+root      =
+manifest  = .deploy-manifest
+
+# SSH only — the private key whose public half is authorised in
+# cPanel > Security > SSH Access > Manage SSH Keys.
+key       = ~/.ssh/aquamarine_cpanel

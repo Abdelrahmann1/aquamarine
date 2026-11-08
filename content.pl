@@ -337,7 +337,7 @@ push @GALLERY, qw(
   ['index.html',    ['الرئيسية','Home']],
   ['about.html',    ['من نحن','About']],
   ['services.html', ['الخدمات','Services'], 'sub'],
-  ['projects.html', ['المشروعات','Projects']],
+  ['projects.php', ['المشروعات','Projects']],
   ['works.html',    ['سابقة الأعمال','Track Record'], undef, 'minor'],
   ['gallery.html',  ['ألبوم الصور','Gallery'], undef, 'minor'],
   ['videos.html',   ['الفيديوهات','Video'],  undef, 'minor'],

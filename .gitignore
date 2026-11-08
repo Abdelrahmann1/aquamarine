@@ -1,0 +1,4 @@
+# Deploy settings hold the host password — they stay on the machine.
+deploy.conf
+.deploy-manifest
+admin/config.php
