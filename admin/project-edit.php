@@ -256,8 +256,9 @@ require __DIR__ . '/head.php';
       <label style="display:flex;align-items:center;gap:8px">
         <input type="checkbox" name="featured" value="1"<?= $p['featured'] ? ' checked' : '' ?>
                style="width:auto;margin:0">
-        مشروع مميّز
+        يظهر في صور الصفحة الرئيسية
       </label>
+      <p class="hint" style="margin-top:-8px">صورة المشروع دي هتبقى من صور الهيرو اللي بتتبدّل فوق في الصفحة الرئيسية.</p>
 
       <h2>الصورة الرئيسية</h2>
       <?php if ($p['cover']): ?>

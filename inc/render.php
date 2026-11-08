@@ -130,6 +130,164 @@ function aqm_gallery(array $imgs, string $a, string $lang, string $cap, string $
   return $o . '</div>';
 }
 
+// The home hero's photographs: the covers of the projects ticked for it
+// in the dashboard. With none ticked the page keeps the ones it shipped
+// with, so the hero is never empty.
+function aqm_hero(string $a, array $fallback): string {
+  $files = [];
+  $pdo = db(true);
+  if ($pdo) {
+    try {
+      $st = $pdo->query('SELECT cover FROM projects
+                         WHERE status = "live" AND featured = 1 AND cover IS NOT NULL AND cover <> ""
+                         ORDER BY sort, id LIMIT 6');
+      foreach ($st->fetchAll() as $r) $files[] = $r['cover'];
+    } catch (Throwable $e) {
+      $files = [];
+    }
+  }
+  if (!$files) $files = $fallback;
+
+  $o = '';
+  $i = 0;
+  foreach ($files as $f) {
+    $src = $a . 'assets/img/' . h($f);
+    // The first one paints immediately; the rest wait for main.js to
+    // swap them in, which is how the shipped hero already behaved.
+    $o .= $i === 0
+      ? '<i style="background-image:url(\'' . $src . '\')"></i>'
+      : '<i data-bg="' . $src . '"></i>';
+    $i++;
+  }
+  return $o;
+}
+
+// Arabic counts agree differently from English ones: one, two, a few
+// (3-10) and many each take their own form.
+function aqm_photos_n(int $n, string $lang): string {
+  if ($lang !== 'ar') return $n === 1 ? '1 photo' : $n . ' photos';
+  $m = $n % 100;
+  if ($n === 1) return 'صورة واحدة';
+  if ($n === 2) return 'صورتان';
+  if ($m >= 3 && $m <= 10) return $n . ' صور';
+  return $n . ' صورة';
+}
+
+function aqm_albums_n(int $n, string $lang): string {
+  if ($lang !== 'ar') return $n === 1 ? '1 album' : $n . ' albums';
+  $m = $n % 100;
+  if ($n === 1) return 'ألبوم واحد';
+  if ($n === 2) return 'ألبومان';
+  if ($m >= 3 && $m <= 10) return $n . ' ألبومات';
+  return $n . ' ألبوماً';
+}
+
+// One album for every live project — its cover, then whatever has been
+// uploaded to it in the dashboard — followed by the sets the build ships
+// with. A shipped album is [slug, title, [[file, caption, width, height]]].
+function aqm_albums(string $lang, array $shipped): array {
+  $out = [];
+  $pdo = db(true);
+  if ($pdo) {
+    try {
+      $st = $pdo->query('SELECT id, slug, title_ar, title_en, cover FROM projects
+                         WHERE status = "live" ORDER BY sort, id');
+      foreach ($st->fetchAll() as $p) {
+        $title = $lang === 'en' ? $p['title_en'] : $p['title_ar'];
+        $files = [];
+        if ((string) $p['cover'] !== '') $files[] = [$p['cover'], $title, 0, 0];
+        foreach (aqm_images((int) $p['id']) as $i) {
+          if ($i['file'] === $p['cover']) continue;
+          $cap = (string) ($i['caption_' . ($lang === 'en' ? 'en' : 'ar')] ?? '');
+          $files[] = [$i['file'], $cap !== '' ? $cap : $title, 0, 0];
+        }
+        if ($files) $out[] = ['p-' . $p['slug'], $title, $files];
+      }
+    } catch (Throwable $e) {
+      $out = [];
+    }
+  }
+  foreach ($shipped as $s) $out[] = $s;
+  return $out;
+}
+
+function aqm_shelf(array $albums, string $a, string $lang, string $groupLabel, string $allLabel): string {
+  $total = 0;
+  foreach ($albums as $al) $total += count($al[2]);
+
+  $o = '<div class="albums" data-for="#gal" role="group" aria-label="' . h($groupLabel) . '">'
+     . '<button type="button" class="album album-all on" data-filter="all" aria-pressed="true">'
+     . '<span class="cv"><b class="tnum">' . $total . '</b></span>'
+     . '<span class="nm">' . h($allLabel) . '</span>'
+     . '<span class="ct">' . h(aqm_photos_n($total, $lang)) . '</span></button>';
+
+  foreach ($albums as $al) {
+    if (!$al[2]) continue;
+    $o .= '<button type="button" class="album" data-filter="' . h($al[0]) . '" aria-pressed="false">'
+        . '<span class="cv"><img src="' . $a . 'assets/img/' . h($al[2][0][0]) . '" alt="" loading="lazy" decoding="async"></span>'
+        . '<span class="nm">' . h($al[1]) . '</span>'
+        . '<span class="ct">' . h(aqm_photos_n(count($al[2]), $lang)) . '</span></button>';
+  }
+  return $o . '</div>';
+}
+
+// With $limit the photographs come round-robin across the albums, so a
+// preview shows a spread of the work rather than one album's worth.
+function aqm_gal(array $albums, string $a, string $zoom, string $icon, int $limit = 0): string {
+  $items = [];
+  if ($limit > 0) {
+    $q = [];
+    foreach ($albums as $al) $q[] = ['cat' => $al[0], 'files' => $al[2]];
+    $more = true;
+    while (count($items) < $limit && $more) {
+      $more = false;
+      foreach (array_keys($q) as $k) {
+        if (empty($q[$k]['files'])) continue;
+        $items[] = [$q[$k]['cat'], array_shift($q[$k]['files'])];
+        $more = true;
+        if (count($items) >= $limit) break;
+      }
+    }
+  } else {
+    foreach ($albums as $al) {
+      foreach ($al[2] as $f) $items[] = [$al[0], $f];
+    }
+  }
+
+  $o = '<div class="gal" id="gal">';
+  $n = 0;
+  foreach ($items as $it) {
+    $cat = $it[0];
+    $f   = $it[1];
+    $src = $a . 'assets/img/' . h($f[0]);
+    $wh  = ($f[2] && $f[3]) ? ' width="' . (int) $f[2] . '" height="' . (int) $f[3] . '"' : '';
+    $o .= '<figure data-cat="' . h($cat) . '" data-full="' . $src . '" data-cap="' . h($f[1]) . '"'
+        . ' data-rv data-delay="' . number_format(($n % 4) * 0.07, 2) . '" aria-label="' . h($zoom) . '">'
+        . '<img src="' . $src . '" alt="' . h($f[1]) . '"' . $wh . ' loading="lazy" decoding="async">'
+        . '<figcaption>' . $icon . ' ' . h($f[1]) . '</figcaption></figure>';
+    $n++;
+  }
+  return $o . '</div>';
+}
+
+// The home page's mosaic of projects.
+function aqm_bento(array $rows, string $lang, string $a, string $view, string $icon): string {
+  $o = '<div class="bento">';
+  $k = 0;
+  foreach ($rows as $p) {
+    $t = aqm_txt($p, 'title', $lang);
+    $d = aqm_txt($p, 'lead', $lang);
+    $o .= '<a class="proj" href="project.php?slug=' . urlencode($p['slug']) . '"'
+        . ' data-rv data-delay="' . number_format(($k % 3) * 0.08, 2) . '">'
+        . '<img src="' . $a . 'assets/img/' . h($p['cover']) . '" alt="' . h($t) . '" loading="lazy">'
+        . '<div class="proj-in"><span class="tag">' . h($p['tag']) . '</span>'
+        . '<h3>' . h($t) . '</h3><p>' . h($d) . '</p>'
+        . '<span class="go">' . h($view) . ' ' . $icon . '</span></div></a>';
+    $k++;
+  }
+  return $o . '</div>';
+}
+
 function aqm_pager(?array $prev, ?array $next, string $lang, string $prevLabel,
                    string $nextLabel, string $backIcon, string $fwdIcon): string {
   $o = '<nav class="pager">';
@@ -144,4 +302,11 @@ function aqm_pager(?array $prev, ?array $next, string $lang, string $prevLabel,
       . '<span class="ttl">' . h(aqm_txt($next, 'title', $lang)) . '</span></span>' . $fwdIcon . '</a>'
     : '<a class="next empty" href="#"><span></span></a>';
   return $o . '</nav>';
+}
+
+// The photo sets this build ships with, by language.
+function aqm_shipped(string $lang): array {
+  return $lang === 'en'
+    ? [['makadi','Albatros Makadi',[['albatros/makadi-01.jpg','Albatros Makadi',1280,720],['albatros/makadi-02.jpg','Albatros Makadi',1280,720],['albatros/makadi-03.jpg','Albatros Makadi',1280,720],['albatros/makadi-04.jpg','Albatros Makadi',1280,720],['albatros/makadi-05.jpg','Albatros Makadi',1280,720],['albatros/makadi-06.jpg','Albatros Makadi',1280,720],['albatros/makadi-07.jpg','Albatros Makadi',1280,720],['albatros/makadi-08.jpg','Albatros Makadi',1280,960],['albatros/makadi-09.jpg','Albatros Makadi',1280,920],['albatros/makadi-10.jpg','Albatros Makadi',1280,720],['albatros/makadi-11.jpg','Albatros Makadi',1280,720],['albatros/makadi-12.jpg','Albatros Makadi',1280,720],['albatros/makadi-13.jpg','Albatros Makadi',1280,720],['albatros/makadi-14.jpg','Albatros Makadi',1280,720],['albatros/makadi-15.jpg','Albatros Makadi',1280,720],['albatros/makadi-16.jpg','Albatros Makadi',960,540],['albatros/makadi-17.jpg','Albatros Makadi',1280,720],['albatros/makadi-18.jpg','Albatros Makadi',1280,720],['albatros/makadi-19.jpg','Albatros Makadi',1280,720],['albatros/makadi-20.jpg','Albatros Makadi',1280,720],['albatros/makadi-21.jpg','Albatros Makadi',1280,720],['albatros/makadi-22.jpg','Albatros Makadi',1280,720],['albatros/makadi-23.jpg','Albatros Makadi',1280,720],['albatros/makadi-24.jpg','Albatros Makadi',1280,720],['albatros/makadi-25.jpg','Albatros Makadi',1280,720],['albatros/makadi-26.jpg','Albatros Makadi',1280,720],['albatros/makadi-27.jpg','Albatros Makadi',1280,720],['albatros/makadi-28.jpg','Albatros Makadi',1280,720],['albatros/makadi-29.jpg','Albatros Makadi',1280,720],['albatros/makadi-30.jpg','Albatros Makadi',1280,720],['albatros/makadi-31.jpg','Albatros Makadi',1280,720],['albatros/makadi-32.jpg','Albatros Makadi',1280,720],['albatros/makadi-33.jpg','Albatros Makadi',1280,720],['albatros/makadi-34.jpg','Albatros Makadi',1280,720],['albatros/makadi-35.jpg','Albatros Makadi',1280,720],['albatros/makadi-36.jpg','Albatros Makadi',1280,720],['albatros/makadi-37.jpg','Albatros Makadi',1280,720],['albatros/makadi-38.jpg','Albatros Makadi',1280,720]]],['portofino','Albatros Portofino',[['albatros/portofino-01.jpg','Albatros Portofino',1280,854],['albatros/portofino-02.jpg','Albatros Portofino',1280,720],['albatros/portofino-03.jpg','Albatros Portofino',1280,720],['albatros/portofino-04.jpg','Albatros Portofino',1280,854],['albatros/portofino-05.jpg','Albatros Portofino',1280,720],['albatros/portofino-06.jpg','Albatros Portofino',1280,720],['albatros/portofino-07.jpg','Albatros Portofino',1280,720],['albatros/portofino-08.jpg','Albatros Portofino',1280,720],['albatros/portofino-09.jpg','Albatros Portofino',1280,960],['albatros/portofino-10.jpg','Albatros Portofino',1280,960],['albatros/portofino-11.jpg','Albatros Portofino',1280,960],['albatros/portofino-12.jpg','Albatros Portofino',1280,960],['albatros/portofino-13.jpg','Albatros Portofino',1280,960],['albatros/portofino-14.jpg','Albatros Portofino',1280,720],['albatros/portofino-15.jpg','Albatros Portofino',1280,720],['albatros/portofino-16.jpg','Albatros Portofino',1280,720],['albatros/portofino-17.jpg','Albatros Portofino',960,540],['albatros/portofino-18.jpg','Albatros Portofino',1280,720],['albatros/portofino-19.jpg','Albatros Portofino',1280,720],['albatros/portofino-20.jpg','Albatros Portofino',960,540],['albatros/portofino-21.jpg','Albatros Portofino',1280,720],['albatros/portofino-22.jpg','Albatros Portofino',1280,720],['albatros/portofino-23.jpg','Albatros Portofino',1280,720],['albatros/portofino-24.jpg','Albatros Portofino',1280,720]]],['citadel','Albatros Citadel',[['albatros/citadel-01.jpg','Albatros Citadel',1280,720],['albatros/citadel-02.jpg','Albatros Citadel',1280,720],['albatros/citadel-03.jpg','Albatros Citadel',1280,720],['albatros/citadel-04.jpg','Albatros Citadel',720,1280],['albatros/citadel-05.jpg','Albatros Citadel',1280,720],['albatros/citadel-06.jpg','Albatros Citadel',1280,720],['albatros/citadel-07.jpg','Albatros Citadel',720,1280]]],['resort','Albatros Resort',[['albatros/resort-01.jpg','Albatros Resort',1280,720],['albatros/resort-02.jpg','Albatros Resort',1280,720],['albatros/resort-03.jpg','Albatros Resort',1280,720]]],['neverland','Albatros Neverland',[['albatros/neverland-01.jpg','Albatros Neverland',1280,720],['albatros/neverland-02.jpg','Albatros Neverland',1280,720]]],['archive','Aqua Marine archive',[['aquamarine1.jpeg','Aqua Marine archive',700,933],['aquamarine2.jpg','Aqua Marine archive',700,525],['aquamarine3.jpg','Aqua Marine archive',700,525],['aquamarine4.jpg','Aqua Marine archive',700,525],['aquamarine5.jpg','Aqua Marine archive',700,525],['aquamarine6.jpg','Aqua Marine archive',700,525],['aquamarine7.jpg','Aqua Marine archive',700,525],['aquamarine8.jpg','Aqua Marine archive',700,933],['aquamarine9.jpg','Aqua Marine archive',700,323],['aquamarine10.jpg','Aqua Marine archive',700,420],['aquamarine11.jpg','Aqua Marine archive',700,420],['aquamarine14.jpg','Aqua Marine archive',700,394],['aquamarine15.jpg','Aqua Marine archive',700,525],['aquamarine16.jpg','Aqua Marine archive',700,525],['aquamarine19.jpg','Aqua Marine archive',700,933],['aquamarine18.jpg','Aqua Marine archive',700,525],['aquamarine20.jpg','Aqua Marine archive',700,933],['aquamarine21.jpg','Aqua Marine archive',700,525],['aquamarine12(1).jpg','Aqua Marine archive',700,394],['aquamarine22.jpg','Aqua Marine archive',700,525],['aquamarine23.jpg','Aqua Marine archive',700,394],['aquamarine24.jpg','Aqua Marine archive',700,525],['aquamarine25.jpg','Aqua Marine archive',700,525],['aquamarine26.jpg','Aqua Marine archive',700,525],['aquamarine27.jpg','Aqua Marine archive',700,525],['aquamarine29.jpg','Aqua Marine archive',700,1244],['aquamarine28.jpg','Aqua Marine archive',700,525]]]]
+    : [['makadi','ألباتروس مكادي',[['albatros/makadi-01.jpg','ألباتروس مكادي',1280,720],['albatros/makadi-02.jpg','ألباتروس مكادي',1280,720],['albatros/makadi-03.jpg','ألباتروس مكادي',1280,720],['albatros/makadi-04.jpg','ألباتروس مكادي',1280,720],['albatros/makadi-05.jpg','ألباتروس مكادي',1280,720],['albatros/makadi-06.jpg','ألباتروس مكادي',1280,720],['albatros/makadi-07.jpg','ألباتروس مكادي',1280,720],['albatros/makadi-08.jpg','ألباتروس مكادي',1280,960],['albatros/makadi-09.jpg','ألباتروس مكادي',1280,920],['albatros/makadi-10.jpg','ألباتروس مكادي',1280,720],['albatros/makadi-11.jpg','ألباتروس مكادي',1280,720],['albatros/makadi-12.jpg','ألباتروس مكادي',1280,720],['albatros/makadi-13.jpg','ألباتروس مكادي',1280,720],['albatros/makadi-14.jpg','ألباتروس مكادي',1280,720],['albatros/makadi-15.jpg','ألباتروس مكادي',1280,720],['albatros/makadi-16.jpg','ألباتروس مكادي',960,540],['albatros/makadi-17.jpg','ألباتروس مكادي',1280,720],['albatros/makadi-18.jpg','ألباتروس مكادي',1280,720],['albatros/makadi-19.jpg','ألباتروس مكادي',1280,720],['albatros/makadi-20.jpg','ألباتروس مكادي',1280,720],['albatros/makadi-21.jpg','ألباتروس مكادي',1280,720],['albatros/makadi-22.jpg','ألباتروس مكادي',1280,720],['albatros/makadi-23.jpg','ألباتروس مكادي',1280,720],['albatros/makadi-24.jpg','ألباتروس مكادي',1280,720],['albatros/makadi-25.jpg','ألباتروس مكادي',1280,720],['albatros/makadi-26.jpg','ألباتروس مكادي',1280,720],['albatros/makadi-27.jpg','ألباتروس مكادي',1280,720],['albatros/makadi-28.jpg','ألباتروس مكادي',1280,720],['albatros/makadi-29.jpg','ألباتروس مكادي',1280,720],['albatros/makadi-30.jpg','ألباتروس مكادي',1280,720],['albatros/makadi-31.jpg','ألباتروس مكادي',1280,720],['albatros/makadi-32.jpg','ألباتروس مكادي',1280,720],['albatros/makadi-33.jpg','ألباتروس مكادي',1280,720],['albatros/makadi-34.jpg','ألباتروس مكادي',1280,720],['albatros/makadi-35.jpg','ألباتروس مكادي',1280,720],['albatros/makadi-36.jpg','ألباتروس مكادي',1280,720],['albatros/makadi-37.jpg','ألباتروس مكادي',1280,720],['albatros/makadi-38.jpg','ألباتروس مكادي',1280,720]]],['portofino','ألباتروس بورتوفينو',[['albatros/portofino-01.jpg','ألباتروس بورتوفينو',1280,854],['albatros/portofino-02.jpg','ألباتروس بورتوفينو',1280,720],['albatros/portofino-03.jpg','ألباتروس بورتوفينو',1280,720],['albatros/portofino-04.jpg','ألباتروس بورتوفينو',1280,854],['albatros/portofino-05.jpg','ألباتروس بورتوفينو',1280,720],['albatros/portofino-06.jpg','ألباتروس بورتوفينو',1280,720],['albatros/portofino-07.jpg','ألباتروس بورتوفينو',1280,720],['albatros/portofino-08.jpg','ألباتروس بورتوفينو',1280,720],['albatros/portofino-09.jpg','ألباتروس بورتوفينو',1280,960],['albatros/portofino-10.jpg','ألباتروس بورتوفينو',1280,960],['albatros/portofino-11.jpg','ألباتروس بورتوفينو',1280,960],['albatros/portofino-12.jpg','ألباتروس بورتوفينو',1280,960],['albatros/portofino-13.jpg','ألباتروس بورتوفينو',1280,960],['albatros/portofino-14.jpg','ألباتروس بورتوفينو',1280,720],['albatros/portofino-15.jpg','ألباتروس بورتوفينو',1280,720],['albatros/portofino-16.jpg','ألباتروس بورتوفينو',1280,720],['albatros/portofino-17.jpg','ألباتروس بورتوفينو',960,540],['albatros/portofino-18.jpg','ألباتروس بورتوفينو',1280,720],['albatros/portofino-19.jpg','ألباتروس بورتوفينو',1280,720],['albatros/portofino-20.jpg','ألباتروس بورتوفينو',960,540],['albatros/portofino-21.jpg','ألباتروس بورتوفينو',1280,720],['albatros/portofino-22.jpg','ألباتروس بورتوفينو',1280,720],['albatros/portofino-23.jpg','ألباتروس بورتوفينو',1280,720],['albatros/portofino-24.jpg','ألباتروس بورتوفينو',1280,720]]],['citadel','ألباتروس سيتادل',[['albatros/citadel-01.jpg','ألباتروس سيتادل',1280,720],['albatros/citadel-02.jpg','ألباتروس سيتادل',1280,720],['albatros/citadel-03.jpg','ألباتروس سيتادل',1280,720],['albatros/citadel-04.jpg','ألباتروس سيتادل',720,1280],['albatros/citadel-05.jpg','ألباتروس سيتادل',1280,720],['albatros/citadel-06.jpg','ألباتروس سيتادل',1280,720],['albatros/citadel-07.jpg','ألباتروس سيتادل',720,1280]]],['resort','ألباتروس ريزورت',[['albatros/resort-01.jpg','ألباتروس ريزورت',1280,720],['albatros/resort-02.jpg','ألباتروس ريزورت',1280,720],['albatros/resort-03.jpg','ألباتروس ريزورت',1280,720]]],['neverland','ألباتروس نيفرلاند',[['albatros/neverland-01.jpg','ألباتروس نيفرلاند',1280,720],['albatros/neverland-02.jpg','ألباتروس نيفرلاند',1280,720]]],['archive','أرشيف أكوا مارين',[['aquamarine1.jpeg','أرشيف أكوا مارين',700,933],['aquamarine2.jpg','أرشيف أكوا مارين',700,525],['aquamarine3.jpg','أرشيف أكوا مارين',700,525],['aquamarine4.jpg','أرشيف أكوا مارين',700,525],['aquamarine5.jpg','أرشيف أكوا مارين',700,525],['aquamarine6.jpg','أرشيف أكوا مارين',700,525],['aquamarine7.jpg','أرشيف أكوا مارين',700,525],['aquamarine8.jpg','أرشيف أكوا مارين',700,933],['aquamarine9.jpg','أرشيف أكوا مارين',700,323],['aquamarine10.jpg','أرشيف أكوا مارين',700,420],['aquamarine11.jpg','أرشيف أكوا مارين',700,420],['aquamarine14.jpg','أرشيف أكوا مارين',700,394],['aquamarine15.jpg','أرشيف أكوا مارين',700,525],['aquamarine16.jpg','أرشيف أكوا مارين',700,525],['aquamarine19.jpg','أرشيف أكوا مارين',700,933],['aquamarine18.jpg','أرشيف أكوا مارين',700,525],['aquamarine20.jpg','أرشيف أكوا مارين',700,933],['aquamarine21.jpg','أرشيف أكوا مارين',700,525],['aquamarine12(1).jpg','أرشيف أكوا مارين',700,394],['aquamarine22.jpg','أرشيف أكوا مارين',700,525],['aquamarine23.jpg','أرشيف أكوا مارين',700,394],['aquamarine24.jpg','أرشيف أكوا مارين',700,525],['aquamarine25.jpg','أرشيف أكوا مارين',700,525],['aquamarine26.jpg','أرشيف أكوا مارين',700,525],['aquamarine27.jpg','أرشيف أكوا مارين',700,525],['aquamarine29.jpg','أرشيف أكوا مارين',700,1244],['aquamarine28.jpg','أرشيف أكوا مارين',700,525]]]];
 }

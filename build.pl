@@ -213,7 +213,7 @@ sub head_html {
 <link rel="icon" href="${A}assets/img/favicon.png" type="image/png">
 <link rel="stylesheet" href="${A}assets/css/main.css">
 <link rel="stylesheet" href="${A}assets/css/sections.css">
-@{[ $file eq 'index.html' ? qq{<link rel="stylesheet" href="${A}assets/css/home.css">} : '' ]}
+@{[ ($file eq 'index.html' || $file eq 'home.php') ? qq{<link rel="stylesheet" href="${A}assets/css/home.css">} : '' ]}
 <script>document.documentElement.classList.add('rv');setTimeout(function(){if(!window.rvReady)document.documentElement.classList.remove('rv')},3000)</script>@{[ clarity_html() ]}
 </head>
 <body>
@@ -497,6 +497,26 @@ sub php_str {
   return "'" . $s . "'";
 }
 
+# The albums the build ships with, in the shape render.php expects:
+# [slug, title, [[file, caption, width, height], ...]]
+sub php_albums {
+  our @ALBUMS;              # declared further down, beside the other content
+  my @all = album_items();
+  my @out;
+  for my $al (@ALBUMS) {
+    my @mine = grep { $_->{cat} eq $al->{slug} } @all;
+    next unless @mine;
+    my @files;
+    for my $it (@mine) {
+      my ($w, $h) = jpeg_dims("assets/img/$it->{file}");
+      push @files, '[' . join(',', php_str($it->{file}), php_str($it->{cap}), ($w || 0), ($h || 0)) . ']';
+    }
+    push @out, '[' . join(',', php_str($al->{slug}), php_str(t($al->{t})),
+                               '[' . join(',', @files) . ']') . ']';
+  }
+  return '[' . join(',', @out) . ']';
+}
+
 sub write_render_php {
   mkdir 'inc' unless -d 'inc';
   open(my $fh, '>:encoding(UTF-8)', 'inc/render.php') or die "inc/render.php: $!";
@@ -633,6 +653,164 @@ function aqm_gallery(array $imgs, string $a, string $lang, string $cap, string $
   return $o . '</div>';
 }
 
+// The home hero's photographs: the covers of the projects ticked for it
+// in the dashboard. With none ticked the page keeps the ones it shipped
+// with, so the hero is never empty.
+function aqm_hero(string $a, array $fallback): string {
+  $files = [];
+  $pdo = db(true);
+  if ($pdo) {
+    try {
+      $st = $pdo->query('SELECT cover FROM projects
+                         WHERE status = "live" AND featured = 1 AND cover IS NOT NULL AND cover <> ""
+                         ORDER BY sort, id LIMIT 6');
+      foreach ($st->fetchAll() as $r) $files[] = $r['cover'];
+    } catch (Throwable $e) {
+      $files = [];
+    }
+  }
+  if (!$files) $files = $fallback;
+
+  $o = '';
+  $i = 0;
+  foreach ($files as $f) {
+    $src = $a . 'assets/img/' . h($f);
+    // The first one paints immediately; the rest wait for main.js to
+    // swap them in, which is how the shipped hero already behaved.
+    $o .= $i === 0
+      ? '<i style="background-image:url(\'' . $src . '\')"></i>'
+      : '<i data-bg="' . $src . '"></i>';
+    $i++;
+  }
+  return $o;
+}
+
+// Arabic counts agree differently from English ones: one, two, a few
+// (3-10) and many each take their own form.
+function aqm_photos_n(int $n, string $lang): string {
+  if ($lang !== 'ar') return $n === 1 ? '1 photo' : $n . ' photos';
+  $m = $n % 100;
+  if ($n === 1) return 'صورة واحدة';
+  if ($n === 2) return 'صورتان';
+  if ($m >= 3 && $m <= 10) return $n . ' صور';
+  return $n . ' صورة';
+}
+
+function aqm_albums_n(int $n, string $lang): string {
+  if ($lang !== 'ar') return $n === 1 ? '1 album' : $n . ' albums';
+  $m = $n % 100;
+  if ($n === 1) return 'ألبوم واحد';
+  if ($n === 2) return 'ألبومان';
+  if ($m >= 3 && $m <= 10) return $n . ' ألبومات';
+  return $n . ' ألبوماً';
+}
+
+// One album for every live project — its cover, then whatever has been
+// uploaded to it in the dashboard — followed by the sets the build ships
+// with. A shipped album is [slug, title, [[file, caption, width, height]]].
+function aqm_albums(string $lang, array $shipped): array {
+  $out = [];
+  $pdo = db(true);
+  if ($pdo) {
+    try {
+      $st = $pdo->query('SELECT id, slug, title_ar, title_en, cover FROM projects
+                         WHERE status = "live" ORDER BY sort, id');
+      foreach ($st->fetchAll() as $p) {
+        $title = $lang === 'en' ? $p['title_en'] : $p['title_ar'];
+        $files = [];
+        if ((string) $p['cover'] !== '') $files[] = [$p['cover'], $title, 0, 0];
+        foreach (aqm_images((int) $p['id']) as $i) {
+          if ($i['file'] === $p['cover']) continue;
+          $cap = (string) ($i['caption_' . ($lang === 'en' ? 'en' : 'ar')] ?? '');
+          $files[] = [$i['file'], $cap !== '' ? $cap : $title, 0, 0];
+        }
+        if ($files) $out[] = ['p-' . $p['slug'], $title, $files];
+      }
+    } catch (Throwable $e) {
+      $out = [];
+    }
+  }
+  foreach ($shipped as $s) $out[] = $s;
+  return $out;
+}
+
+function aqm_shelf(array $albums, string $a, string $lang, string $groupLabel, string $allLabel): string {
+  $total = 0;
+  foreach ($albums as $al) $total += count($al[2]);
+
+  $o = '<div class="albums" data-for="#gal" role="group" aria-label="' . h($groupLabel) . '">'
+     . '<button type="button" class="album album-all on" data-filter="all" aria-pressed="true">'
+     . '<span class="cv"><b class="tnum">' . $total . '</b></span>'
+     . '<span class="nm">' . h($allLabel) . '</span>'
+     . '<span class="ct">' . h(aqm_photos_n($total, $lang)) . '</span></button>';
+
+  foreach ($albums as $al) {
+    if (!$al[2]) continue;
+    $o .= '<button type="button" class="album" data-filter="' . h($al[0]) . '" aria-pressed="false">'
+        . '<span class="cv"><img src="' . $a . 'assets/img/' . h($al[2][0][0]) . '" alt="" loading="lazy" decoding="async"></span>'
+        . '<span class="nm">' . h($al[1]) . '</span>'
+        . '<span class="ct">' . h(aqm_photos_n(count($al[2]), $lang)) . '</span></button>';
+  }
+  return $o . '</div>';
+}
+
+// With $limit the photographs come round-robin across the albums, so a
+// preview shows a spread of the work rather than one album's worth.
+function aqm_gal(array $albums, string $a, string $zoom, string $icon, int $limit = 0): string {
+  $items = [];
+  if ($limit > 0) {
+    $q = [];
+    foreach ($albums as $al) $q[] = ['cat' => $al[0], 'files' => $al[2]];
+    $more = true;
+    while (count($items) < $limit && $more) {
+      $more = false;
+      foreach (array_keys($q) as $k) {
+        if (empty($q[$k]['files'])) continue;
+        $items[] = [$q[$k]['cat'], array_shift($q[$k]['files'])];
+        $more = true;
+        if (count($items) >= $limit) break;
+      }
+    }
+  } else {
+    foreach ($albums as $al) {
+      foreach ($al[2] as $f) $items[] = [$al[0], $f];
+    }
+  }
+
+  $o = '<div class="gal" id="gal">';
+  $n = 0;
+  foreach ($items as $it) {
+    $cat = $it[0];
+    $f   = $it[1];
+    $src = $a . 'assets/img/' . h($f[0]);
+    $wh  = ($f[2] && $f[3]) ? ' width="' . (int) $f[2] . '" height="' . (int) $f[3] . '"' : '';
+    $o .= '<figure data-cat="' . h($cat) . '" data-full="' . $src . '" data-cap="' . h($f[1]) . '"'
+        . ' data-rv data-delay="' . number_format(($n % 4) * 0.07, 2) . '" aria-label="' . h($zoom) . '">'
+        . '<img src="' . $src . '" alt="' . h($f[1]) . '"' . $wh . ' loading="lazy" decoding="async">'
+        . '<figcaption>' . $icon . ' ' . h($f[1]) . '</figcaption></figure>';
+    $n++;
+  }
+  return $o . '</div>';
+}
+
+// The home page's mosaic of projects.
+function aqm_bento(array $rows, string $lang, string $a, string $view, string $icon): string {
+  $o = '<div class="bento">';
+  $k = 0;
+  foreach ($rows as $p) {
+    $t = aqm_txt($p, 'title', $lang);
+    $d = aqm_txt($p, 'lead', $lang);
+    $o .= '<a class="proj" href="project.php?slug=' . urlencode($p['slug']) . '"'
+        . ' data-rv data-delay="' . number_format(($k % 3) * 0.08, 2) . '">'
+        . '<img src="' . $a . 'assets/img/' . h($p['cover']) . '" alt="' . h($t) . '" loading="lazy">'
+        . '<div class="proj-in"><span class="tag">' . h($p['tag']) . '</span>'
+        . '<h3>' . h($t) . '</h3><p>' . h($d) . '</p>'
+        . '<span class="go">' . h($view) . ' ' . $icon . '</span></div></a>';
+    $k++;
+  }
+  return $o . '</div>';
+}
+
 function aqm_pager(?array $prev, ?array $next, string $lang, string $prevLabel,
                    string $nextLabel, string $backIcon, string $fwdIcon): string {
   $o = '<nav class="pager">';
@@ -649,6 +827,15 @@ function aqm_pager(?array $prev, ?array $next, string $lang, string $prevLabel,
   return $o . '</nav>';
 }
 PHP
+
+  # The shipped albums, written once for both languages so neither page
+  # has to carry the whole photo list in its own markup.
+  my $en = do { local $L = 1; php_albums() };
+  my $ar = do { local $L = 0; php_albums() };
+  print {$fh} "\n// The photo sets this build ships with, by language.\n"
+            . "function aqm_shipped(string \$lang): array {\n"
+            . "  return \$lang === 'en'\n    ? $en\n    : $ar;\n}\n";
+
   close $fh;
   print "  inc/render.php\n";
 }
@@ -1079,20 +1266,8 @@ sub build_all {
   $tl .= qq{<li><span class="tl-dot">$_->{n}</span><h3>@{[t($_->{t})]}</h3><p>@{[t($_->{d})]}</p></li>} for @PROCESS;
   $tl .= '</ol>';
 
-  # the Albatros albums, each opening its own filtered gallery view
-  my @all = album_items();
-  my $alb = '<div class="alb">';
-  my $ai = 0;
-  for my $al (grep { $_->{glob} } @ALBUMS) {
-    my @mine = grep { $_->{cat} eq $al->{slug} } @all;
-    next unless @mine;
-    my $cover = $al->{cover} || $mine[0]{file};
-    my $d = sprintf('%.2f', $ai * 0.07);
-    $alb .= qq{<a href="gallery.html#$al->{slug}" data-rv data-delay="$d"><img src="${A}assets/img/$cover" alt="@{[t($al->{t})]}" loading="lazy">}
-          . qq{<span class="alb-t"><b>@{[t($al->{t})]}</b><span>@{[photos_n(scalar @mine)]}</span></span></a>};
-    $ai++;
-  }
-  $alb .= '</div>';
+  # a taste of the gallery, taken across the albums
+  my $galprev = gal_html(8);
 
   # where we work — an outlined ticker
   my $locs = join '', map { '<span>' . t($_) . '</span><i>◆</i>' } (@LOCATIONS, @LOCATIONS);
@@ -1198,17 +1373,17 @@ sub build_all {
   </div>
 </section>
 
-<section class="section band">
+<section class="section band" id="photos">
   <div class="wrap">
     <div class="sec-head">
       <div class="t" data-rv>
         <span class="eyebrow">/ GALLERY</span>
-        <h2 class="h2" style="margin-top:1rem">@{[t($T{alb_h})]}</h2>
-        <p class="lead" style="margin-top:.7rem">@{[t($T{alb_l})]}</p>
+        <h2 class="h2" style="margin-top:1rem">@{[t($T{gallery_h})]}</h2>
+        <p class="lead" style="margin-top:.7rem">@{[t($T{gallery_lead})]}</p>
       </div>
-      <a class="btn btn-ghost" href="gallery.html" data-rv>@{[t($T{all_photos})]} @{[ic(fwd(),'ic')]}</a>
+      <a class="btn btn-ghost" href="gallery.php" data-rv>@{[t($T{all_photos})]} @{[ic(fwd(),'ic')]}</a>
     </div>
-    $alb
+    $galprev
   </div>
 </section>
 
@@ -1241,6 +1416,30 @@ sub build_all {
 </section>
 HTML
   page('index.html', "$co — " . t($T{meta_home_t}), t($T{meta_home}), 'index.html', $body); $n++;
+
+  # The same home page, with the hero photographs and the mosaic coming
+  # from the dashboard instead of from this file. .htaccess serves this
+  # one at /; index.html above stays as the fallback if PHP is ever off.
+  {
+    my $defaults = '[' . join(',', map { php_str("a-$_.jpg") } (1..4)) . ']';
+    my $slides_php = qq{<?= aqm_hero('$A', $defaults) ?>};
+    my $bento_php  = qq{<?= \$hrows ? aqm_bento(\$hrows, '$LANG', '$A', }
+                   . php_str(t($T{view_project})) . ', ' . php_str(ic(fwd(),'ic'))
+                   . qq{) : @{[php_str($bento)]} ?>};
+
+    my $gal_php   = qq{<?= aqm_gal(\$albums, '$A', @{[php_str(t($T{zoom}))]}, @{[php_str(ic('zoom'))]}, 8) ?>}
+                  . lb_html();
+
+    my $body_php = $body;
+    $body_php =~ s/\Q$slides\E/$slides_php/;
+    $body_php =~ s/\Q$bento\E/$bento_php/;
+    $body_php =~ s/\Q$galprev\E/$gal_php/;
+
+    my $pre = php_head() . qq{\$hrows = aqm_rows();
+\$albums = aqm_albums('$LANG', aqm_shipped('$LANG')); ?>};
+    page_php('home.php', "$co — " . t($T{meta_home_t}), t($T{meta_home}),
+             'index.html', $body_php, '', $pre); $n++;
+  }
   }
 
   # ---------------------------------------------------------- ABOUT
@@ -1397,7 +1596,7 @@ HTML
       <span class="eyebrow">/ ON SITE</span>
       <h2 class="h2" style="margin-top:1rem">@{[t($T{from_our_work})]}</h2>
       <p class="lead" style="margin-top:.7rem">@{[t($T{from_our_work_l})]}</p>
-    </div><a class="btn btn-ghost" href="gallery.html" data-rv>@{[t($T{all_photos})]} @{[ic(fwd(),'ic')]}</a></div>
+    </div><a class="btn btn-ghost" href="gallery.php" data-rv>@{[t($T{all_photos})]} @{[ic(fwd(),'ic')]}</a></div>
     @{[strip($i * 2)]}
   </div>
 </section>
@@ -1425,7 +1624,8 @@ HTML
   my $chips = qq{<button class="chip on" data-filter="all" aria-pressed="true">@{[t($T{filter_all})]}<span class="c"><?= count(\$rows) ?></span></button>};
   $chips .= qq{<button class="chip" data-filter="$_" aria-pressed="false">@{[t($SECTOR{$_})]}<span class="c"><?= \$counts['$_'] ?></span></button>} for @SECTORS;
 
-  my $body = php_head() . q{$rows = aqm_rows(); $counts = aqm_counts($rows); ?>}
+  my $body = php_head() . qq{\$rows = aqm_rows(); \$counts = aqm_counts(\$rows);
+\$albums = aqm_albums('$LANG', aqm_shipped('$LANG')); ?>}
   . phero(t($NAV[3][1]), t($T{projects_lead}), 'aquamarine25(1).jpg', [[t($NAV[3][1])]],
                    [map { [t($SECTOR{$_}), $_] } @SECTORS])
   . subnav([['projects',t($NAV[3][1])],['photos',t($T{gallery_h})],['video',t($T{video_page_h})]], 1)
@@ -1445,9 +1645,10 @@ HTML
         <h2 class="h2" style="margin-top:1rem">@{[t($T{gallery_h})]}</h2>
         <p class="lead" style="margin-top:.7rem">@{[t($T{gallery_lead})]}</p>
       </div>
-      <a class="btn btn-ghost" href="gallery.html" data-rv>@{[t($T{all_photos})]} @{[ic(fwd(),'ic')]}</a>
+      <a class="btn btn-ghost" href="gallery.php" data-rv>@{[t($T{all_photos})]} @{[ic(fwd(),'ic')]}</a>
     </div>
-    @{[gal_html(8)]}
+    <?= aqm_gal(\$albums, '$A', @{[php_str(t($T{zoom}))]}, @{[php_str(ic('zoom'))]}, 8) ?>
+    @{[lb_html()]}
   </div>
 </section>
 
@@ -1558,7 +1759,7 @@ if (!\$p) { http_response_code(404); }
     <div class="sec-head"><div class="t" data-rv>
       <span class="eyebrow">/ ON SITE</span>
       <h2 class="h2" style="margin-top:1rem">@{[t($T{from_our_work})]}</h2>
-    </div><a class="btn btn-ghost" href="gallery.html" data-rv>@{[t($T{all_photos})]} @{[ic(fwd(),'ic')]}</a></div>
+    </div><a class="btn btn-ghost" href="gallery.php" data-rv>@{[t($T{all_photos})]} @{[ic(fwd(),'ic')]}</a></div>
     <?php \$imgs = aqm_images((int) \$p['id']); if (\$imgs): ?>
     <?= aqm_gallery(\$imgs, '$A', '$LANG', @{[php_str(t($C{name}))]}, @{[php_str(t($T{zoom}))]}, @{[php_str(ic('zoom'))]}) ?>
     @{[lb_html()]}
@@ -1629,17 +1830,26 @@ HTML
 
   # ---------------------------------------------------------- GALLERY
   {
-  my @all = album_items();
-  my $albums = grep { my $s = $_->{slug}; grep { $_->{cat} eq $s } @all } @ALBUMS;
+  # An album per project, from the dashboard, plus the sets shipped here.
+  my $lang = $LANG;
+  my $pre  = php_head() . qq{\$albums = aqm_albums('$lang', aqm_shipped('$lang'));
+\$nphotos = 0; foreach (\$albums as \$al) { \$nphotos += count(\$al[2]); }
+\$nalbums = count(\$albums); ?>};
+
   my $body = phero(t($T{gallery_h}), t($T{albums_lead}), 'albatros/makadi-01.jpg', [[t($T{gallery_h})]],
-                   [photos_n(scalar @all), albums_n($albums)])
+                   [qq{<?= h(aqm_photos_n(\$nphotos, '$lang')) ?>},
+                    qq{<?= h(aqm_albums_n(\$nalbums, '$lang')) ?>}])
   . qq{<section class="section"><div class="wrap">}
   . qq{<div class="sec-head" style="margin-bottom:clamp(22px,2.6vw,32px)"><div class="t" data-rv>}
   . qq{<span class="eyebrow">/ ALBUMS</span><h2 class="h2" style="margin-top:1rem">@{[t($T{albums_h})]}</h2>}
   . qq{<p class="lead" style="margin-top:.7rem">@{[t($T{gallery_note})]}</p></div></div>}
-  . album_shelf() . gal_html() . q{</div></section>}
+  . qq{<?= aqm_shelf(\$albums, '$A', '$lang', @{[php_str(t($T{albums_h}))]}, @{[php_str(t($T{all_photos}))]}) ?>}
+  . qq{<?= aqm_gal(\$albums, '$A', @{[php_str(t($T{zoom}))]}, @{[php_str(ic('zoom'))]}) ?>}
+  . lb_html()
+  . q{</div></section>}
   . cta_band();
-  page('gallery.html', t($T{gallery_h}) . " — $co", t($T{meta_gallery}), 'projects.php', $body); $n++;
+  page_php('gallery.php', t($T{gallery_h}) . " — $co", t($T{meta_gallery}),
+           'projects.php', $body, '', $pre); $n++;
   }
 
   # ---------------------------------------------------------- VIDEOS
@@ -1678,7 +1888,7 @@ HTML
     <div class="sec-head"><div class="t" data-rv>
       <span class="eyebrow">/ ON SITE</span>
       <h2 class="h2" style="margin-top:1rem">@{[t($T{from_our_work})]}</h2>
-    </div><a class="btn btn-ghost" href="gallery.html" data-rv>@{[t($T{all_photos})]} @{[ic(fwd(),'ic')]}</a></div>
+    </div><a class="btn btn-ghost" href="gallery.php" data-rv>@{[t($T{all_photos})]} @{[ic(fwd(),'ic')]}</a></div>
     @{[strip(6)]}
   </div>
 </section>

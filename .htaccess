@@ -1,3 +1,8 @@
+# The home page reads its hero photographs and its project mosaic from the
+# dashboard, so it is PHP. index.html is still built beside it and comes
+# next in this list, which keeps the site up if PHP is ever turned off.
+DirectoryIndex home.php index.html index.php
+
 RewriteEngine On
 
 # Everything over https.
@@ -8,7 +13,12 @@ RewriteRule ^(.*)$ https://aquamarine-ws.com/$1 [R,L]
 # them became PHP. The old addresses are the ones Google and other sites
 # already know, so they are kept alive as permanent redirects rather than
 # left to 404.
+# A link to index.html serves the dynamic home page without changing the
+# address, so every link already written for it keeps working.
+RewriteRule ^(ar/)?index\.html$ /$1home.php [L]
+
 RewriteRule ^(ar/)?projects\.html$ /$1projects.php [R=301,L]
+RewriteRule ^(ar/)?gallery\.html$ /$1gallery.php [R=301,L]
 RewriteRule ^(ar/)?project-([a-zA-Z0-9_-]+)\.html$ /$1project.php?slug=$2 [R=301,L]
 
 # php -- BEGIN cPanel-generated handler, do not edit

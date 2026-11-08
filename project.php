@@ -66,7 +66,7 @@ $qs = $slug !== '' ? '?slug=' . urlencode($slug) : '';
     <div class="sec-head"><div class="t" data-rv>
       <span class="eyebrow">/ ON SITE</span>
       <h2 class="h2" style="margin-top:1rem">From our work</h2>
-    </div><a class="btn btn-ghost" href="gallery.html" data-rv>All photos <svg class="i ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a></div>
+    </div><a class="btn btn-ghost" href="gallery.php" data-rv>All photos <svg class="i ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a></div>
     <?php $imgs = aqm_images((int) $p['id']); if ($imgs): ?>
     <?= aqm_gallery($imgs, '', 'en', 'Aqua Marine Water Systems', 'Enlarge', '<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>') ?>
     <div class="lb" aria-hidden="true" role="dialog" aria-label="Gallery"><div class="lb-bar"><span class="lb-count tnum">1 / 1</span><span class="lb-cap"></span><button class="lb-btn lb-close" aria-label="Close"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div><button class="lb-btn lb-nav lb-prev" aria-label="Previous"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg></button><img src="" alt=""><button class="lb-btn lb-nav lb-next" aria-label="Next"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg></button></div>
@@ -122,7 +122,7 @@ $qs = $slug !== '' ? '?slug=' . urlencode($slug) : '';
       </div>
       <div>
         <h4>Site links</h4>
-        <ul><li><a href="about.html">About</a></li><li><a href="services.html">Services</a></li><li><a href="projects.php">Projects</a></li><li><a href="works.html">Track Record</a></li><li><a href="gallery.html">Gallery</a></li><li><a href="videos.html">Video</a></li><li><a href="contact.html">Contact</a></li><li><a href="order.html">Get a quote</a></li></ul>
+        <ul><li><a href="about.html">About</a></li><li><a href="services.html">Services</a></li><li><a href="projects.php">Projects</a></li><li><a href="works.html">Track Record</a></li><li><a href="gallery.php">Gallery</a></li><li><a href="videos.html">Video</a></li><li><a href="contact.html">Contact</a></li><li><a href="order.html">Get a quote</a></li></ul>
       </div>
       <div>
         <h4>Our services</h4>

@@ -25,7 +25,8 @@ $msg  = flash();
       <a href="projects.php"<?= in_array($here, ['projects.php', 'project-edit.php'], true) ? ' class="on"' : '' ?>>المشروعات</a>
       <?php if ($me['role'] === 'admin'): ?>
         <a href="users.php"<?= $here === 'users.php' ? ' class="on"' : '' ?>>المستخدمين</a>
-        <a href="migrate.php"<?= $here === 'migrate.php' ? ' class="on"' : '' ?>>الجداول</a>
+        <?php // migrate.php stays on the server for a future upgrade, but off
+              // the menu: it is a setup tool, not something to use day to day. ?>
       <?php endif; ?>
     </nav>
     <div class="who">

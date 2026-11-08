@@ -339,7 +339,7 @@ push @GALLERY, qw(
   ['services.html', ['الخدمات','Services'], 'sub'],
   ['projects.php', ['المشروعات','Projects']],
   ['works.html',    ['سابقة الأعمال','Track Record'], undef, 'minor'],
-  ['gallery.html',  ['ألبوم الصور','Gallery'], undef, 'minor'],
+  ['gallery.php',  ['ألبوم الصور','Gallery'], undef, 'minor'],
   ['videos.html',   ['الفيديوهات','Video'],  undef, 'minor'],
   ['contact.html',  ['اتصل بنا','Contact']],
 );
@@ -692,14 +692,15 @@ our @ALBUMS = (
 #  Videos — `yt` for YouTube, `src` for a file in assets/video/
 # ------------------------------------------------------------
 our @VIDEOS = (
-  { yt=>$C{ytid}, poster=>'a-3.jpg', link=>$C{yt}, t=>$C{name}, d=>$T{video_sub} },
+  # the company's own clip, served from the site rather than embedded
+  { src=>'aquamarine-clip.mp4', poster=>'a-3.jpg', t=>$C{name}, d=>$T{video_sub} },
   { src=>'albatros-resort.mp4', poster=>'albatros/resort-01.jpg',
     t=>['ألباتروس ريزورت','Albatros Resort'], d=>['لقطة من موقع المشروع','A clip from the project site'] },
 );
 
 $T{albums_h}    = ['ألبومات المشروعات','Project albums'];
-$T{albums_lead} = ['صور من مشروعات منتجعات ألباتروس، إلى جانب أرشيف أعمال الشركة. اختر ألبوماً لعرض صوره فقط.',
-                   'Photography from the Albatros resort projects, alongside the company archive. Pick an album to show only its photos.'];
+$T{albums_lead} = ['ألبوم لكل مشروع، إلى جانب أرشيف أعمال الشركة. اختر ألبوماً لعرض صوره فقط.',
+                   'An album for every project, alongside the company archive. Pick an album to show only its photos.'];
 $T{photos_word} = ['صورة','photos'];
 $T{albums_word} = ['ألبومات','albums'];
 $T{videos_word} = ['فيديو','videos'];
@@ -723,8 +724,6 @@ $T{sx_h}    = ['تسع خدمات، ومسؤولية واحدة','Nine services,
 $T{sx_l}    = ['مرّر على أي خدمة لمعاينتها، أو افتحها لقراءة التفاصيل.','Hover a service to preview it, or open it for the details.'];
 $T{nums_h}  = ['السجل منذ التأسيس','The record since 2004'];
 $T{num_est} = ['سنة التأسيس','year founded'];
-$T{alb_h}   = ['من مشروعات ألباتروس','From the Albatros projects'];
-$T{alb_l}   = ['ألبومات صور من خمسة منتجعات — افتح أي ألبوم لتصفح صوره.','Photo albums from five resorts. Open one to browse its photos.'];
 $T{wt_h}    = ['شاهد، ثم تحدث إلينا','Watch, then talk to us'];
 $T{wt_l}    = ['جولة قصيرة داخل بعض مشروعاتنا. وحين تكون جاهزاً، فريقنا متاح على مدار اليوم.','A short tour through some of our projects. When you are ready, our team is available around the clock.'];
 $T{num_locs} = [q{مدينة ودولة عملنا فيها},q{cities and countries worked in}];
