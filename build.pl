@@ -968,6 +968,8 @@ sub quote_section {
       <p class="lead" style="margin-top:.7rem">@{[t($T{qz_lead})]}</p>
     </div>$more_link</div>
 
+    <p class="eu-mark" data-rv><i class="eu-ico">@{[ic('check')]}</i><b>@{[t($T{spec_eu})]}</b></p>
+
     <div class="qz" data-quote data-wa="$C{wa}" data-cur="$cur" data-subject="@{[t($T{qz_wa_subject})]}" data-rv>
       <script type="application/json" class="qz-data">{"p":$matrix}</script>
 
@@ -1017,8 +1019,7 @@ sub quote_section {
           </div>
           <dl class="qz-sum"></dl>
         </div>
-        <p class="eu-mark">@{[ic('check')]}<b>@{[t($T{spec_eu})]}</b></p>
-        <h3 class="h3" style="margin-top:clamp(22px,2.6vw,32px)">@{[t($T{spec_h})]}</h3>
+        <h3 class="h3" style="margin-top:clamp(26px,3vw,38px)">@{[t($T{spec_h})]}</h3>
         <p class="qz-sub">@{[t($T{spec_lead})]}</p>
         <dl class="spec">$spec</dl>
         <div class="note" style="margin-top:1.3rem">@{[ic('info')]} @{[t($T{prices_note})]}</div>

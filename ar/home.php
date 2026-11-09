@@ -105,6 +105,8 @@ $albums = aqm_albums('ar', aqm_shipped('ar')); ?><!DOCTYPE html>
       <p class="lead" style="margin-top:.7rem">أربع خطوات قصيرة: النوع، المقاس، بياناتك — ثم يظهر السعر وتبعت طلبك.</p>
     </div><a class="btn btn-ghost" href="service-pool-build.html" data-rv>تفاصيل الخدمة <svg class="i ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></a></div>
 
+    <p class="eu-mark" data-rv><i class="eu-ico"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg></i><b>جميع معدات حمام السباحة صناعة أوروبية</b></p>
+
     <div class="qz" data-quote data-wa="201005551386" data-cur="ج.م" data-subject="طلب عرض سعر حمام سباحة" data-rv>
       <script type="application/json" class="qz-data">{"p":[[961925,1402900,1923850,2404812],[1570887,2291028,3135875,3919843],[1370461,1998721,2731867,3414833]]}</script>
 
@@ -154,8 +156,7 @@ $albums = aqm_albums('ar', aqm_shipped('ar')); ?><!DOCTYPE html>
           </div>
           <dl class="qz-sum"></dl>
         </div>
-        <p class="eu-mark"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg><b>جميع معدات حمام السباحة صناعة أوروبية</b></p>
-        <h3 class="h3" style="margin-top:clamp(22px,2.6vw,32px)">توصيف التشطيب</h3>
+        <h3 class="h3" style="margin-top:clamp(26px,3vw,38px)">توصيف التشطيب</h3>
         <p class="qz-sub">الخامات المسعَّرة أعلاه.</p>
         <dl class="spec"><div><dt>تشطيب حمام السباحة</dt><dd>رخام تريستا — سمك 4 سم، عرض 45 سم، لون بيج</dd></div><div><dt>سيراميك حمام السباحة</dt><dd>سيراميكا كليوباترا — مقاس 12 × 24 سم، لون لبني</dd></div><div><dt>سيراميك حوائط الغرف</dt><dd>سيراميكا كليوباترا — مقاس 30 × 60 سم، لون أبيض</dd></div><div><dt>سيراميك أرضيات الغرف</dt><dd>سورناجا — مقاس 30 × 30 سم</dd></div></dl>
         <div class="note" style="margin-top:1.3rem"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> السعر النهائي يتحدد بعد معاينة الموقع، ويختلف حسب المقاس والتشطيب والمعدات المطلوبة.</div>
